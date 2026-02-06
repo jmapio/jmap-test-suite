@@ -168,7 +168,7 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
               },
               onSuccessUpdateEmail: {
                 "#osuSub": {
-                  "mailboxIds/${sentMailbox}": true,
+                  [`mailboxIds/${sentMailbox}`]: true,
                   [`mailboxIds/${ctx.roleMailboxes["drafts"] ?? ctx.roleMailboxes["inbox"]}`]:
                     null,
                   "keywords/$draft": null,
