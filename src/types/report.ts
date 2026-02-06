@@ -17,6 +17,7 @@ export interface TestResult {
 
 export interface TestReport {
   server: string;
+  serverInfo?: string;
   timestamp: string;
   durationMs: number;
   summary: {

@@ -1,5 +1,6 @@
 {
   "sessionUrl": "http://localhost:8080/.well-known/jmap",
+  "serverInfo": "Stalwart v0.15.4",
   "users": {
     "primary": {
       "username": "user1",

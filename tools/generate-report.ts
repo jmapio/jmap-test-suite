@@ -22,6 +22,7 @@ interface TestResult {
 
 interface TestReport {
   server: string;
+  serverInfo?: string;
   timestamp: string;
   durationMs: number;
   summary: {
@@ -271,7 +272,7 @@ tr.source-row td { padding: 0; }
 for (const { name, report } of servers) {
   const s = report.summary;
   html += `  <div class="card">
-    <h3>${escapeHtml(name)}</h3>
+    <h3>${escapeHtml(name)}${report.serverInfo ? ` <span style="font-weight:400;font-size:12px;color:#888">${escapeHtml(report.serverInfo)}</span>` : ""}</h3>
     <div class="stats">
       <div class="stat pass"><div class="num">${s.passed}</div><div class="label">Pass</div></div>
       <div class="stat fail"><div class="num">${s.failed}</div><div class="label">Fail</div></div>

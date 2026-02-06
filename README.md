@@ -19,6 +19,7 @@ Copy `config.example.json` and fill in your server details:
 ```json
 {
   "sessionUrl": "https://jmap.example.com/.well-known/jmap",
+  "serverInfo": "Example Server v1.0",
   "users": {
     "primary": {
       "username": "testuser@example.com",
@@ -39,6 +40,7 @@ Copy `config.example.json` and fill in your server details:
 | Field | Required | Description |
 |-------|----------|-------------|
 | `sessionUrl` | yes | JMAP session resource URL |
+| `serverInfo` | no | Free-text server description (e.g. `"Stalwart v1.0.0"`), copied into reports |
 | `users.primary` | yes | Credentials for the main test account |
 | `users.secondary` | no | Second user for EmailSubmission tests (sending email to a real recipient) |
 | `authMethod` | no | `"basic"` (default) or `"bearer"` |

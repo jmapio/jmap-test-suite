@@ -1,5 +1,6 @@
 {
   "sessionUrl": "https://api.fastmail.com/jmap/session",
+  "serverInfo": "Fastmail",
   "users": {
     "primary": {
       "username": "testjmaptest@fastmail.net",

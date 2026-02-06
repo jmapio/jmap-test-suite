@@ -1,5 +1,6 @@
 {
   "sessionUrl": "https://jmap.example.com/.well-known/jmap",
+  "serverInfo": "Example Server v1.0",
   "users": {
     "primary": {
       "username": "testuser@example.com",

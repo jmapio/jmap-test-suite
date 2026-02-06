@@ -94,7 +94,7 @@ async function main() {
     failOnly: values["fail-only"] ?? false,
   });
 
-  const report = generateReport(config.sessionUrl, results, startTime);
+  const report = generateReport(config.sessionUrl, results, startTime, config.serverInfo);
   const json = JSON.stringify(report, null, 2);
 
   if (values.output) {

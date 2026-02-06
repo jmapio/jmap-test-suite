@@ -9,6 +9,7 @@ export interface Config {
     primary: UserConfig;
     secondary?: UserConfig;
   };
+  serverInfo?: string;
   authMethod: "basic" | "bearer";
   timeout: number;
   noLocalCallback: boolean;
@@ -56,6 +57,7 @@ export function validateConfig(raw: unknown): Config {
       primary: { username: primary.username, password: primary.password },
       secondary,
     },
+    serverInfo: typeof obj.serverInfo === "string" ? obj.serverInfo : undefined,
     authMethod: (obj.authMethod as "basic" | "bearer") || "basic",
     timeout: typeof obj.timeout === "number" ? obj.timeout : 30000,
     noLocalCallback: obj.noLocalCallback === true,
