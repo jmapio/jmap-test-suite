@@ -1,0 +1,17 @@
+{
+  "sessionUrl": "https://jmap.example.com/.well-known/jmap",
+  "accounts": {
+    "primary": {
+      "username": "testuser@example.com",
+      "password": "secret"
+    },
+    "secondary": {
+      "username": "testuser2@example.com",
+      "password": "secret2"
+    }
+  },
+  "authMethod": "basic",
+  "timeout": 30000,
+  "noLocalCallback": false,
+  "verbose": false
+}
