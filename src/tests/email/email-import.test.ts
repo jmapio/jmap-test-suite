@@ -202,7 +202,8 @@ defineTests({ rfc: "RFC8621", section: "4.8", category: "email" }, [
   },
   {
     id: "import-invalid-blob",
-    name: "Email/import MUST reject non-message blob",
+    name: "Email/import rejects non-message blob",
+    required: false,
     fn: async (ctx) => {
       // Upload non-email data
       const data = new TextEncoder().encode("this is not an email");

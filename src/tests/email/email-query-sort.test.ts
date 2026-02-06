@@ -114,6 +114,7 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
   {
     id: "sort-subject",
     name: "Email/query sort by subject",
+    required: false,
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,

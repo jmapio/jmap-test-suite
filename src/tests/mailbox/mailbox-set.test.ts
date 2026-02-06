@@ -246,6 +246,89 @@ defineTests({ rfc: "RFC8621", section: "2.5", category: "mailbox" }, [
     },
   },
   {
+    id: "set-on-destroy-remove-emails-with-children",
+    name: "Mailbox/set destroy with onDestroyRemoveEmails MUST fail if mailbox has children",
+    fn: async (ctx) => {
+      // Create parent with an email and a child mailbox
+      const createParent = await ctx.client.call("Mailbox/set", {
+        accountId: ctx.accountId,
+        create: {
+          parent: { name: "Parent For Destroy Child Test", parentId: null },
+        },
+      });
+      const parentId = (createParent.created as Record<string, { id: string }>).parent.id;
+
+      const createChild = await ctx.client.call("Mailbox/set", {
+        accountId: ctx.accountId,
+        create: {
+          child: { name: "Child Of Destroy Test", parentId: parentId },
+        },
+      });
+      const childId = (createChild.created as Record<string, { id: string }>).child.id;
+
+      // Put an email in the parent
+      const createEmail = await ctx.client.call("Email/set", {
+        accountId: ctx.accountId,
+        create: {
+          tempEmail: {
+            mailboxIds: { [parentId]: true },
+            from: [{ name: "Test", email: "test@example.com" }],
+            to: [{ name: "User", email: "user@example.com" }],
+            subject: "Email in parent with child",
+            bodyStructure: { type: "text/plain", partId: "1" },
+            bodyValues: { "1": { value: "body" } },
+          },
+        },
+      });
+      const emailId = (createEmail.created as Record<string, { id: string }>).tempEmail.id;
+
+      // Try to destroy parent with onDestroyRemoveEmails — must still fail with mailboxHasChild
+      const destroyResult = await ctx.client.call("Mailbox/set", {
+        accountId: ctx.accountId,
+        destroy: [parentId],
+        onDestroyRemoveEmails: true,
+      });
+      const notDestroyed = destroyResult.notDestroyed as Record<
+        string,
+        { type: string }
+      > | null;
+      ctx.assertTruthy(
+        notDestroyed?.[parentId],
+        "Server MUST refuse to destroy mailbox with children even with onDestroyRemoveEmails"
+      );
+      ctx.assertEqual(notDestroyed![parentId].type, "mailboxHasChild");
+
+      // Verify child mailbox still exists
+      const childGet = await ctx.client.call("Mailbox/get", {
+        accountId: ctx.accountId,
+        ids: [childId],
+      });
+      ctx.assertLength(childGet.list as unknown[], 1, "Child mailbox must still exist");
+
+      // Verify email still exists
+      const emailGet = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids: [emailId],
+        properties: ["id"],
+      });
+      ctx.assertLength(emailGet.list as unknown[], 1, "Email in parent must still exist");
+
+      // Cleanup
+      await ctx.client.call("Email/set", {
+        accountId: ctx.accountId,
+        destroy: [emailId],
+      });
+      await ctx.client.call("Mailbox/set", {
+        accountId: ctx.accountId,
+        destroy: [childId],
+      });
+      await ctx.client.call("Mailbox/set", {
+        accountId: ctx.accountId,
+        destroy: [parentId],
+      });
+    },
+  },
+  {
     id: "set-duplicate-name-same-parent",
     name: "Mailbox/set MUST reject duplicate name under same parent",
     fn: async (ctx) => {
@@ -274,7 +357,7 @@ defineTests({ rfc: "RFC8621", section: "2.5", category: "mailbox" }, [
           notCreated?.dup2,
           "Server MUST reject duplicate mailbox name under same parent"
         );
-        ctx.assertTruthy(notCreated!.dup2.type);
+        ctx.assertEqual(notCreated!.dup2.type, "alreadyExists");
         // Clean up if server erroneously created it
         if ((create2.created as Record<string, { id: string }>)?.dup2) {
           await ctx.client.call("Mailbox/set", {

@@ -8,7 +8,10 @@ defineTests({ rfc: "RFC8620", section: "6.1", category: "binary" }, [
       const data = new TextEncoder().encode("Hello, JMAP upload test!");
       const result = await ctx.client.upload(data, "text/plain");
       ctx.assertTruthy(result.blobId, "Must return blobId");
-      ctx.assertEqual(result.type, "text/plain");
+      ctx.assert(
+        result.type === "text/plain" || result.type.startsWith("text/plain;"),
+        `Expected type to be text/plain (possibly with params), got "${result.type}"`
+      );
       ctx.assertEqual(result.size, data.length);
       ctx.assertEqual(result.accountId, ctx.accountId);
     },
@@ -50,11 +53,14 @@ defineTests({ rfc: "RFC8620", section: "6.1", category: "binary" }, [
   },
   {
     id: "upload-preserves-content-type",
-    name: "Upload preserves specified content type",
+    name: "Upload preserves specified content type (server may normalize with params)",
     fn: async (ctx) => {
       const data = new TextEncoder().encode("<html><body>test</body></html>");
       const result = await ctx.client.upload(data, "text/html");
-      ctx.assertEqual(result.type, "text/html");
+      ctx.assert(
+        result.type === "text/html" || result.type.startsWith("text/html;"),
+        `Expected type to be text/html (possibly with params), got "${result.type}"`
+      );
     },
   },
 ]);

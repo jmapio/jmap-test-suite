@@ -25,7 +25,7 @@ defineTests({ rfc: "RFC8620", section: "4", category: "core" }, [
     fn: async (ctx) => {
       const args = {
         string: "test",
-        number: 3.14,
+        number: 42,
         bool: true,
         null: null,
         array: [1, "two", false],

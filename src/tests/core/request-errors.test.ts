@@ -15,9 +15,8 @@ defineTests({ rfc: "RFC8620", section: "3.6.1", category: "core" }, [
   },
   {
     id: "error-not-request",
-    name: "Server SHOULD return 400 for JSON that is not a valid Request",
+    name: "Server MUST return 400 for JSON that is not a valid Request",
     section: "3.6.1",
-    required: false,
     fn: async (ctx) => {
       const resp = await ctx.client.rawPost(JSON.stringify({ foo: "bar" }));
       ctx.assert(
@@ -28,48 +27,41 @@ defineTests({ rfc: "RFC8620", section: "3.6.1", category: "core" }, [
   },
   {
     id: "error-unknown-capability",
-    name: "Server returns error for unknown capability in using",
+    name: "Server MUST return HTTP-level error for unknown capability in using",
     section: "3.6.1",
     fn: async (ctx) => {
-      try {
-        const response = await ctx.client.rawRequest(
-          ["urn:ietf:params:jmap:core", "urn:fake:nonexistent"],
-          [["Core/echo", {}, "c0"]]
-        );
-        // Server returned a JMAP response — check for error method response
-        const [name, args] = response.methodResponses[0];
-        if (name === "error") {
-          ctx.assertEqual(
-            (args as Record<string, unknown>).type,
-            "unknownCapability"
-          );
-        }
-      } catch {
-        // HTTP 4xx error is also acceptable
-      }
+      const resp = await ctx.client.rawPost(
+        JSON.stringify({
+          using: ["urn:ietf:params:jmap:core", "urn:fake:nonexistent"],
+          methodCalls: [["Core/echo", {}, "c0"]],
+        })
+      );
+      ctx.assert(
+        resp.status >= 400 && resp.status < 500,
+        `Expected HTTP 4xx error for unknown capability, got ${resp.status}`
+      );
     },
   },
   {
     id: "error-empty-using",
-    name: "Server returns error when using array is empty",
+    name: "Server processes request with empty using but rejects each method with unknownMethod",
     section: "3.6.1",
     fn: async (ctx) => {
-      try {
-        const response = await ctx.client.rawRequest(
-          [],
-          [["Core/echo", {}, "c0"]]
-        );
-        // If JMAP response returned, the method call must be an error
-        // (no capabilities in using means no methods should be processed)
-        const [name] = response.methodResponses[0];
-        ctx.assertEqual(
-          name,
-          "error",
-          "With empty using, method call must return error"
-        );
-      } catch {
-        // HTTP 4xx error is also acceptable
-      }
+      const response = await ctx.client.rawRequest(
+        [],
+        [["Core/echo", {}, "c0"]]
+      );
+      const [name, args] = response.methodResponses[0];
+      ctx.assertEqual(
+        name,
+        "error",
+        "With empty using, method call must return error"
+      );
+      ctx.assertEqual(
+        (args as Record<string, unknown>).type,
+        "unknownMethod",
+        "Error type must be unknownMethod when no capabilities in using"
+      );
     },
   },
   {

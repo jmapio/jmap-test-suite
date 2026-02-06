@@ -24,11 +24,11 @@ defineTests({ rfc: "RFC8620", section: "3.6.2", category: "core" }, [
         [["Mailbox/get", {}, "c0"]]
       );
       const [name, args] = response.methodResponses[0];
-      ctx.assertEqual(name, "error");
-      const type = (args as Record<string, unknown>).type as string;
-      ctx.assert(
-        type === "invalidArguments" || type === "accountNotFound",
-        `Expected invalidArguments or accountNotFound, got ${type}`
+      ctx.assertEqual(name, "error", `Expected "error", got "${name}"`);
+      ctx.assertEqual(
+        (args as Record<string, unknown>).type,
+        "invalidArguments",
+        "Missing accountId must return invalidArguments"
       );
     },
   },

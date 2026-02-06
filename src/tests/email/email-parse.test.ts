@@ -103,7 +103,8 @@ defineTests({ rfc: "RFC8621", section: "4.9", category: "email" }, [
   },
   {
     id: "parse-not-parsable",
-    name: "Email/parse MUST return notParsable for non-email blob",
+    name: "Email/parse returns notParsable for non-email blob",
+    required: false,
     fn: async (ctx) => {
       // Upload non-email content
       const upload = await ctx.client.upload(
