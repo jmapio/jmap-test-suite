@@ -1,0 +1,17 @@
+{
+  "sessionUrl": "https://api.fastmail.com/jmap/session",
+  "users": {
+    "primary": {
+      "username": "testjmaptest@fastmail.net",
+      "password": "fmu1-bef64055-d4bec2f539615d15d0bf3fd3c40efb28-0-58d79653e3d8ef90715f468ea0171214"
+    },
+    "secondary": {
+      "username": "testjmaptest2@fastmail.net",
+      "password": "fmu1-be1e4055-53979f4ec8db4443fcc194b00d2f0112-0-e76728e1e8eeaed6e36f90d1fc64bf4c"
+    }
+  },
+  "authMethod": "bearer",
+  "timeout": 30000,
+  "noLocalCallback": true,
+  "verbose": false
+}

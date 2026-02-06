@@ -1,14 +1,16 @@
 import { defineTests } from "../../runner/test-registry.js";
 import { hasCapability } from "../../client/session.js";
+import type { TestContext } from "../../runner/test-context.js";
+
+const needsSubmission = (ctx: TestContext): true | string =>
+  hasCapability(ctx.session, "urn:ietf:params:jmap:submission") ? true : "Server does not support submission capability";
 
 defineTests({ rfc: "RFC8621", section: "6.1", category: "identity" }, [
   {
     id: "get-all-identities",
     name: "Identity/get with ids=null returns all identities",
+    runIf: needsSubmission,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:submission")) {
-        throw new Error("SKIP: Server does not support submission capability");
-      }
       const result = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: null,
@@ -25,10 +27,8 @@ defineTests({ rfc: "RFC8621", section: "6.1", category: "identity" }, [
   {
     id: "get-identity-properties",
     name: "Identity object has required properties",
+    runIf: needsSubmission,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:submission")) {
-        throw new Error("SKIP: Server does not support submission capability");
-      }
       const result = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: null,
@@ -55,10 +55,8 @@ defineTests({ rfc: "RFC8621", section: "6.1", category: "identity" }, [
   {
     id: "get-identity-by-id",
     name: "Identity/get returns specific identity by id",
+    runIf: (ctx) => ctx.identityIds.length === 0 ? "No identities available" : true,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const result = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: [ctx.identityIds[0]],
@@ -71,10 +69,8 @@ defineTests({ rfc: "RFC8621", section: "6.1", category: "identity" }, [
   {
     id: "get-identity-not-found",
     name: "Identity/get returns notFound for unknown id",
+    runIf: needsSubmission,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:submission")) {
-        throw new Error("SKIP: Server does not support submission capability");
-      }
       const result = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: ["nonexistent-identity-xyz"],
@@ -86,10 +82,8 @@ defineTests({ rfc: "RFC8621", section: "6.1", category: "identity" }, [
   {
     id: "get-identity-email-matches",
     name: "Identity email address is valid",
+    runIf: (ctx) => ctx.identityIds.length === 0 ? "No identities available" : true,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const result = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: [ctx.identityIds[0]],

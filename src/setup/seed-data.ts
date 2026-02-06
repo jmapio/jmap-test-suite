@@ -381,13 +381,13 @@ async function createEmails(ctx: TestContext): Promise<void> {
       receivedAt: daysAgo(1),
     },
     // Draft for submission tests
-    ...(ctx.config.accounts.secondary
+    ...(ctx.config.users.secondary
       ? [
           {
             key: "draft-for-submission",
             rfc5322: buildMessage({
-              from: `${ctx.config.accounts.primary.username}`,
-              to: ctx.config.accounts.secondary.username,
+              from: `${ctx.config.users.primary.username}`,
+              to: ctx.config.users.secondary.username,
               subject: "Test submission email",
               date: hoursAgo(1),
               messageId: "<submission-001@test>",

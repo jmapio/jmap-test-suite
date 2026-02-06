@@ -18,9 +18,10 @@ defineTests({ rfc: "RFC8620", section: "6.3", category: "binary" }, [
         );
       } catch (err) {
         if (err instanceof JmapMethodError) {
-          ctx.assertTruthy(
+          ctx.assertEqual(
             err.type,
-            "Error response must include a type"
+            "invalidArguments",
+            "Same-account copy must return invalidArguments"
           );
         }
       }
@@ -29,20 +30,15 @@ defineTests({ rfc: "RFC8620", section: "6.3", category: "binary" }, [
   {
     id: "blob-copy-cross-account",
     name: "Blob/copy copies blob to another account",
+    runIf: (ctx) => ctx.crossAccountId ? true : "No cross-account access available",
     fn: async (ctx) => {
-      if (!ctx.secondaryClient) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-
-      const secondaryAccountId = ctx.secondaryClient.accountId;
-
       // Upload a blob in the primary account
       const data = new TextEncoder().encode("blob cross-account copy test");
       const upload = await ctx.client.upload(data, "text/plain");
 
       const result = await ctx.client.call("Blob/copy", {
         fromAccountId: ctx.accountId,
-        accountId: secondaryAccountId,
+        accountId: ctx.crossAccountId,
         blobIds: [upload.blobId],
       });
 
@@ -57,16 +53,11 @@ defineTests({ rfc: "RFC8620", section: "6.3", category: "binary" }, [
   {
     id: "blob-copy-not-found",
     name: "Blob/copy returns notCopied for invalid blobId",
+    runIf: (ctx) => ctx.crossAccountId ? true : "No cross-account access available",
     fn: async (ctx) => {
-      if (!ctx.secondaryClient) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-
-      const secondaryAccountId = ctx.secondaryClient.accountId;
-
       const result = await ctx.client.call("Blob/copy", {
         fromAccountId: ctx.accountId,
-        accountId: secondaryAccountId,
+        accountId: ctx.crossAccountId,
         blobIds: ["nonexistent-blob-xyz"],
       });
 
@@ -85,24 +76,19 @@ defineTests({ rfc: "RFC8620", section: "6.3", category: "binary" }, [
   {
     id: "blob-copy-response-structure",
     name: "Blob/copy response has required properties",
+    runIf: (ctx) => ctx.crossAccountId ? true : "No cross-account access available",
     fn: async (ctx) => {
-      if (!ctx.secondaryClient) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-
-      const secondaryAccountId = ctx.secondaryClient.accountId;
-
       const data = new TextEncoder().encode("structure test");
       const upload = await ctx.client.upload(data, "text/plain");
 
       const result = await ctx.client.call("Blob/copy", {
         fromAccountId: ctx.accountId,
-        accountId: secondaryAccountId,
+        accountId: ctx.crossAccountId,
         blobIds: [upload.blobId],
       });
 
       ctx.assertEqual(result.fromAccountId, ctx.accountId);
-      ctx.assertEqual(result.accountId, secondaryAccountId);
+      ctx.assertEqual(result.accountId, ctx.crossAccountId);
     },
   },
 ]);

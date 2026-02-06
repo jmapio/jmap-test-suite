@@ -1,14 +1,16 @@
 import { defineTests } from "../../runner/test-registry.js";
 import { hasCapability } from "../../client/session.js";
+import type { TestContext } from "../../runner/test-context.js";
+
+const needsSubmission = (ctx: TestContext): true | string =>
+  hasCapability(ctx.session, "urn:ietf:params:jmap:submission") ? true : "Server does not support submission capability";
 
 defineTests({ rfc: "RFC8621", section: "6.2", category: "identity" }, [
   {
     id: "changes-no-changes",
     name: "Identity/changes with current state returns empty",
+    runIf: needsSubmission,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:submission")) {
-        throw new Error("SKIP: Server does not support submission capability");
-      }
       const getResult = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: [],
@@ -28,10 +30,8 @@ defineTests({ rfc: "RFC8621", section: "6.2", category: "identity" }, [
   {
     id: "changes-after-update",
     name: "Identity/changes reflects updated identity",
+    runIf: (ctx) => ctx.identityIds.length === 0 ? "No identities available" : true,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const getResult = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: [],
@@ -76,10 +76,8 @@ defineTests({ rfc: "RFC8621", section: "6.2", category: "identity" }, [
   {
     id: "changes-response-structure",
     name: "Identity/changes response has required properties",
+    runIf: needsSubmission,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:submission")) {
-        throw new Error("SKIP: Server does not support submission capability");
-      }
       const getResult = await ctx.client.call("Identity/get", {
         accountId: ctx.accountId,
         ids: [],

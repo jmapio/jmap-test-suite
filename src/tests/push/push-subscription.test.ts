@@ -1,15 +1,16 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
 import { defineTests } from "../../runner/test-registry.js";
+import type { TestContext } from "../../runner/test-context.js";
+
+const needsCallback = (ctx: TestContext): true | string =>
+  ctx.config.noLocalCallback ? "noLocalCallback=true" : true;
 
 defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
     id: "push-subscription-create",
     name: "PushSubscription/set creates a subscription",
+    runIf: needsCallback,
     fn: async (ctx) => {
-      if (ctx.config.noLocalCallback) {
-        throw new Error("SKIP: noLocalCallback=true, skipping PushSubscription tests");
-      }
-
       const { server, url } = await startCallbackServer();
       try {
         const result = await ctx.client.call("PushSubscription/set", {
@@ -40,11 +41,8 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
     id: "push-subscription-get",
     name: "PushSubscription/get returns created subscriptions",
+    runIf: needsCallback,
     fn: async (ctx) => {
-      if (ctx.config.noLocalCallback) {
-        throw new Error("SKIP: noLocalCallback=true");
-      }
-
       const { server, url } = await startCallbackServer();
       try {
         const createResult = await ctx.client.call("PushSubscription/set", {
@@ -80,11 +78,8 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
     id: "push-subscription-destroy",
     name: "PushSubscription/set destroy removes subscription",
+    runIf: needsCallback,
     fn: async (ctx) => {
-      if (ctx.config.noLocalCallback) {
-        throw new Error("SKIP: noLocalCallback=true");
-      }
-
       const { server, url } = await startCallbackServer();
       try {
         const createResult = await ctx.client.call("PushSubscription/set", {
@@ -119,11 +114,8 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
     id: "push-subscription-types-filter",
     name: "PushSubscription/set can set types filter",
+    runIf: needsCallback,
     fn: async (ctx) => {
-      if (ctx.config.noLocalCallback) {
-        throw new Error("SKIP: noLocalCallback=true");
-      }
-
       const { server, url } = await startCallbackServer();
       try {
         const result = await ctx.client.call("PushSubscription/set", {
@@ -152,11 +144,8 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
     id: "push-subscription-receives-notification",
     name: "PushSubscription MUST receive push notification after change",
+    runIf: needsCallback,
     fn: async (ctx) => {
-      if (ctx.config.noLocalCallback) {
-        throw new Error("SKIP: noLocalCallback=true");
-      }
-
       const received: unknown[] = [];
       const { server, url } = await startCallbackServer((body) => {
         received.push(body);
@@ -222,11 +211,8 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
     id: "push-subscription-verification",
     name: "PushSubscription supports verification code",
+    runIf: needsCallback,
     fn: async (ctx) => {
-      if (ctx.config.noLocalCallback) {
-        throw new Error("SKIP: noLocalCallback=true");
-      }
-
       const { server, url } = await startCallbackServer();
       try {
         const result = await ctx.client.call("PushSubscription/set", {

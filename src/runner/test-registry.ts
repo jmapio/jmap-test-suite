@@ -7,6 +7,7 @@ export interface TestDescriptor {
   section: string;
   category: string;
   required: boolean;
+  runIf?: (ctx: TestContext) => true | string;
   fn: (ctx: TestContext) => Promise<void>;
 }
 
@@ -40,6 +41,7 @@ export function defineTests(
     name: string;
     section?: string;
     required?: boolean;
+    runIf?: (ctx: TestContext) => true | string;
     fn: (ctx: TestContext) => Promise<void>;
   }>
 ): void {
@@ -51,6 +53,7 @@ export function defineTests(
       section: def.section ?? defaults.section,
       category: defaults.category,
       required: def.required ?? true,
+      runIf: def.runIf,
       fn: def.fn,
     });
   }

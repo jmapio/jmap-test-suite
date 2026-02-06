@@ -1,14 +1,16 @@
 import { defineTests } from "../../runner/test-registry.js";
 import { hasCapability } from "../../client/session.js";
+import type { TestContext } from "../../runner/test-context.js";
+
+const needsVacation = (ctx: TestContext): true | string =>
+  hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse") ? true : "Server does not support vacationresponse";
 
 defineTests({ rfc: "RFC8621", section: "8.1", category: "vacation" }, [
   {
     id: "get-singleton",
     name: "VacationResponse/get returns singleton with id='singleton'",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
       const result = await ctx.client.call("VacationResponse/get", {
         accountId: ctx.accountId,
         ids: ["singleton"],
@@ -21,10 +23,8 @@ defineTests({ rfc: "RFC8621", section: "8.1", category: "vacation" }, [
   {
     id: "get-singleton-null-ids",
     name: "VacationResponse/get with ids=null returns singleton",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
       const result = await ctx.client.call("VacationResponse/get", {
         accountId: ctx.accountId,
         ids: null,
@@ -37,10 +37,8 @@ defineTests({ rfc: "RFC8621", section: "8.1", category: "vacation" }, [
   {
     id: "get-singleton-properties",
     name: "VacationResponse has all required properties",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
       const result = await ctx.client.call("VacationResponse/get", {
         accountId: ctx.accountId,
         ids: null,
@@ -75,10 +73,8 @@ defineTests({ rfc: "RFC8621", section: "8.1", category: "vacation" }, [
   {
     id: "get-not-found-invalid-id",
     name: "VacationResponse/get returns notFound for non-singleton id",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
       const result = await ctx.client.call("VacationResponse/get", {
         accountId: ctx.accountId,
         ids: ["not-singleton"],

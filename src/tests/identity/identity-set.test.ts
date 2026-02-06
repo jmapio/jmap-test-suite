@@ -1,14 +1,16 @@
 import { defineTests } from "../../runner/test-registry.js";
 import { hasCapability } from "../../client/session.js";
+import type { TestContext } from "../../runner/test-context.js";
+
+const needsIdentities = (ctx: TestContext): true | string =>
+  ctx.identityIds.length === 0 ? "No identities available" : true;
 
 defineTests({ rfc: "RFC8621", section: "6.3", category: "identity" }, [
   {
     id: "set-update-name",
     name: "Identity/set update name",
+    runIf: needsIdentities,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const identityId = ctx.identityIds[0];
 
       // Get original name
@@ -51,10 +53,8 @@ defineTests({ rfc: "RFC8621", section: "6.3", category: "identity" }, [
   {
     id: "set-update-text-signature",
     name: "Identity/set update textSignature",
+    runIf: needsIdentities,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const identityId = ctx.identityIds[0];
 
       const getResult = await ctx.client.call("Identity/get", {
@@ -93,10 +93,8 @@ defineTests({ rfc: "RFC8621", section: "6.3", category: "identity" }, [
   {
     id: "set-update-html-signature",
     name: "Identity/set update htmlSignature",
+    runIf: needsIdentities,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const identityId = ctx.identityIds[0];
 
       const getResult = await ctx.client.call("Identity/get", {
@@ -136,10 +134,8 @@ defineTests({ rfc: "RFC8621", section: "6.3", category: "identity" }, [
   {
     id: "set-update-reply-to",
     name: "Identity/set update replyTo",
+    runIf: needsIdentities,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
       const identityId = ctx.identityIds[0];
 
       await ctx.client.call("Identity/set", {
@@ -175,10 +171,9 @@ defineTests({ rfc: "RFC8621", section: "6.3", category: "identity" }, [
   {
     id: "set-not-found",
     name: "Identity/set update returns notUpdated for unknown id",
+    runIf: (ctx) =>
+      hasCapability(ctx.session, "urn:ietf:params:jmap:submission") ? true : "Server does not support submission capability",
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:submission")) {
-        throw new Error("SKIP: Server does not support submission capability");
-      }
       const result = await ctx.client.call("Identity/set", {
         accountId: ctx.accountId,
         update: {

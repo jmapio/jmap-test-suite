@@ -1,0 +1,17 @@
+{
+  "sessionUrl": "http://localhost:8080/.well-known/jmap",
+  "users": {
+    "primary": {
+      "username": "user1",
+      "password": "password"
+    },
+    "secondary": {
+      "username": "user2",
+      "password": "password"
+    }
+  },
+  "authMethod": "basic",
+  "timeout": 30000,
+  "noLocalCallback": false,
+  "verbose": false
+}

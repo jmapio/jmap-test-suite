@@ -1,13 +1,13 @@
-export interface AccountConfig {
+export interface UserConfig {
   username: string;
   password: string;
 }
 
 export interface Config {
   sessionUrl: string;
-  accounts: {
-    primary: AccountConfig;
-    secondary?: AccountConfig;
+  users: {
+    primary: UserConfig;
+    secondary?: UserConfig;
   };
   authMethod: "basic" | "bearer";
   timeout: number;
@@ -26,33 +26,33 @@ export function validateConfig(raw: unknown): Config {
     throw new Error("Config requires 'sessionUrl' string");
   }
 
-  if (typeof obj.accounts !== "object" || obj.accounts === null) {
-    throw new Error("Config requires 'accounts' object");
+  if (typeof obj.users !== "object" || obj.users === null) {
+    throw new Error("Config requires 'users' object");
   }
 
-  const accounts = obj.accounts as Record<string, unknown>;
+  const users = obj.users as Record<string, unknown>;
 
-  if (typeof accounts.primary !== "object" || accounts.primary === null) {
-    throw new Error("Config requires 'accounts.primary' object");
+  if (typeof users.primary !== "object" || users.primary === null) {
+    throw new Error("Config requires 'users.primary' object");
   }
 
-  const primary = accounts.primary as Record<string, unknown>;
+  const primary = users.primary as Record<string, unknown>;
   if (typeof primary.username !== "string" || typeof primary.password !== "string") {
-    throw new Error("Config 'accounts.primary' requires 'username' and 'password' strings");
+    throw new Error("Config 'users.primary' requires 'username' and 'password' strings");
   }
 
-  let secondary: AccountConfig | undefined;
-  if (accounts.secondary != null) {
-    const sec = accounts.secondary as Record<string, unknown>;
+  let secondary: UserConfig | undefined;
+  if (users.secondary != null) {
+    const sec = users.secondary as Record<string, unknown>;
     if (typeof sec.username !== "string" || typeof sec.password !== "string") {
-      throw new Error("Config 'accounts.secondary' requires 'username' and 'password' strings");
+      throw new Error("Config 'users.secondary' requires 'username' and 'password' strings");
     }
     secondary = { username: sec.username, password: sec.password };
   }
 
   return {
     sessionUrl: obj.sessionUrl,
-    accounts: {
+    users: {
       primary: { username: primary.username, password: primary.password },
       secondary,
     },

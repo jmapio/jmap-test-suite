@@ -30,6 +30,9 @@ export class TestContext {
   /** Server-provided role mailbox IDs */
   public roleMailboxes: Record<string, Id> = {};
 
+  /** A second mail-capable account accessible by the primary user (for cross-account tests) */
+  public crossAccountId?: string;
+
   /** Second client for secondary account (if configured) */
   public secondaryClient?: JmapClient;
 

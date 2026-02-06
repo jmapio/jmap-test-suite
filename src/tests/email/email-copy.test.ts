@@ -23,9 +23,10 @@ defineTests({ rfc: "RFC8621", section: "4.7", category: "email" }, [
         );
       } catch (err) {
         if (err instanceof JmapMethodError) {
-          ctx.assertTruthy(
+          ctx.assertEqual(
             err.type,
-            "Error response must include a type"
+            "invalidArguments",
+            "Same-account copy must return invalidArguments"
           );
         }
       }
@@ -34,13 +35,8 @@ defineTests({ rfc: "RFC8621", section: "4.7", category: "email" }, [
   {
     id: "copy-cross-account",
     name: "Email/copy copies email to another account",
+    runIf: (ctx) => ctx.crossAccountId ? true : "No cross-account access available",
     fn: async (ctx) => {
-      if (!ctx.secondaryClient) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-
-      const secondaryAccountId = ctx.secondaryClient.accountId;
-
       // Create a source email in the primary account
       const createResult = await ctx.client.call("Email/set", {
         accountId: ctx.accountId,
@@ -58,27 +54,27 @@ defineTests({ rfc: "RFC8621", section: "4.7", category: "email" }, [
       const srcId = (createResult.created as Record<string, { id: string }>)
         .src.id;
 
-      // Get the inbox in the secondary account
-      const mbResult = await ctx.secondaryClient.call("Mailbox/get", {
-        accountId: secondaryAccountId,
+      // Get the inbox in the cross account (same user, different account)
+      const mbResult = await ctx.client.call("Mailbox/get", {
+        accountId: ctx.crossAccountId,
         ids: null,
       });
-      const secMailboxes = mbResult.list as Array<{
+      const crossMailboxes = mbResult.list as Array<{
         id: string;
         role: string | null;
       }>;
-      const secInbox = secMailboxes.find((m) => m.role === "inbox");
-      ctx.assertTruthy(secInbox, "Secondary account must have an inbox");
+      const crossInbox = crossMailboxes.find((m) => m.role === "inbox");
+      ctx.assertTruthy(crossInbox, "Cross account must have an inbox");
 
       try {
-        // Copy from primary to secondary using the primary client
+        // Copy from primary to cross account using the primary client
         const copyResult = await ctx.client.call("Email/copy", {
           fromAccountId: ctx.accountId,
-          accountId: secondaryAccountId,
+          accountId: ctx.crossAccountId,
           create: {
             copied: {
               id: srcId,
-              mailboxIds: { [secInbox!.id]: true },
+              mailboxIds: { [crossInbox!.id]: true },
               keywords: { $seen: true },
             },
           },
@@ -90,9 +86,9 @@ defineTests({ rfc: "RFC8621", section: "4.7", category: "email" }, [
         ctx.assertTruthy(created?.copied, "copied email must be in created map");
         ctx.assertTruthy(created!.copied.id, "copied email must have an id");
 
-        // Cleanup copy in secondary account
-        await ctx.secondaryClient.call("Email/set", {
-          accountId: secondaryAccountId,
+        // Cleanup copy in cross account (same user)
+        await ctx.client.call("Email/set", {
+          accountId: ctx.crossAccountId,
           destroy: [created!.copied.id],
         });
       } finally {
@@ -107,32 +103,27 @@ defineTests({ rfc: "RFC8621", section: "4.7", category: "email" }, [
   {
     id: "copy-not-found",
     name: "Email/copy returns notCreated for invalid source id",
+    runIf: (ctx) => ctx.crossAccountId ? true : "No cross-account access available",
     fn: async (ctx) => {
-      if (!ctx.secondaryClient) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-
-      const secondaryAccountId = ctx.secondaryClient.accountId;
-
-      // Get the inbox in the secondary account
-      const mbResult = await ctx.secondaryClient.call("Mailbox/get", {
-        accountId: secondaryAccountId,
+      // Get the inbox in the cross account (same user, different account)
+      const mbResult = await ctx.client.call("Mailbox/get", {
+        accountId: ctx.crossAccountId,
         ids: null,
       });
-      const secMailboxes = mbResult.list as Array<{
+      const crossMailboxes = mbResult.list as Array<{
         id: string;
         role: string | null;
       }>;
-      const secInbox = secMailboxes.find((m) => m.role === "inbox");
-      ctx.assertTruthy(secInbox, "Secondary account must have an inbox");
+      const crossInbox = crossMailboxes.find((m) => m.role === "inbox");
+      ctx.assertTruthy(crossInbox, "Cross account must have an inbox");
 
       const result = await ctx.client.call("Email/copy", {
         fromAccountId: ctx.accountId,
-        accountId: secondaryAccountId,
+        accountId: ctx.crossAccountId,
         create: {
           bad: {
             id: "nonexistent-email-xyz",
-            mailboxIds: { [secInbox!.id]: true },
+            mailboxIds: { [crossInbox!.id]: true },
           },
         },
       });

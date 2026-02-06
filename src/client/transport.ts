@@ -1,8 +1,8 @@
-import type { AccountConfig } from "../types/config.js";
+import type { UserConfig } from "../types/config.js";
 
 export interface TransportOptions {
   authMethod: "basic" | "bearer";
-  account: AccountConfig;
+  account: UserConfig;
   timeout: number;
   verbose: boolean;
 }

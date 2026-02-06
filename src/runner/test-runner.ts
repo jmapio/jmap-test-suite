@@ -23,7 +23,7 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
   // Initialize primary client
   const transport = new Transport({
     authMethod: config.authMethod,
-    account: config.accounts.primary,
+    account: config.users.primary,
     timeout: config.timeout,
     verbose: config.verbose,
   });
@@ -36,28 +36,48 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
       `Account: ${client.session.username} (${client.accountId})\n\n`
   );
 
+  // Scan session for cross-account access (a second mail-capable account)
+  let crossAccountId: string | undefined;
+  const MAIL_CAP = "urn:ietf:params:jmap:mail";
+  for (const [acctId, acct] of Object.entries(client.session.accounts)) {
+    if (acctId !== client.accountId && MAIL_CAP in acct.accountCapabilities) {
+      crossAccountId = acctId;
+      break;
+    }
+  }
+
+  if (crossAccountId) {
+    process.stderr.write(
+      `Cross-account: ${crossAccountId} (mail-capable, accessible by primary user)\n\n`
+    );
+  } else {
+    process.stderr.write(
+      "⚠ No cross-account access — primary user has only one mail account; cross-account tests will skip\n"
+    );
+  }
+
   // Initialize secondary client if configured
   let secondaryClient: JmapClient | undefined;
-  if (config.accounts.secondary) {
+  if (config.users.secondary) {
     const secondaryTransport = new Transport({
       authMethod: config.authMethod,
-      account: config.accounts.secondary,
+      account: config.users.secondary,
       timeout: config.timeout,
       verbose: config.verbose,
     });
     secondaryClient = new JmapClient(secondaryTransport, config.sessionUrl);
     await secondaryClient.initialize();
     process.stderr.write(
-      `Secondary account: ${secondaryClient.session.username} (${secondaryClient.accountId})\n\n`
+      `Secondary user: ${secondaryClient.session.username} (${secondaryClient.accountId})\n\n`
     );
   }
 
   // Build skip categories
   const skipCategories: string[] = [];
-  if (!config.accounts.secondary) {
+  if (!config.users.secondary) {
     skipCategories.push("submission");
     process.stderr.write(
-      "⚠ No secondary account configured — skipping EmailSubmission tests\n"
+      "⚠ No secondary user configured — skipping EmailSubmission tests\n"
     );
   }
   if (config.noLocalCallback) {
@@ -74,6 +94,9 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
   });
 
   const ctx = new TestContext(client, config);
+  if (crossAccountId) {
+    ctx.crossAccountId = crossAccountId;
+  }
   if (secondaryClient) {
     ctx.secondaryClient = secondaryClient;
   }
@@ -99,8 +122,10 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
     const start = performance.now();
 
     let result: TestResult;
-    try {
-      await test.fn(ctx);
+
+    // Check precondition
+    const skipReason = test.runIf ? test.runIf(ctx) : true;
+    if (skipReason !== true) {
       const durationMs = Math.round(performance.now() - start);
       result = {
         testId: test.testId,
@@ -108,23 +133,38 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
         rfc: test.rfc,
         section: test.section,
         required: test.required,
-        status: "pass",
+        status: "skip",
         durationMs,
+        error: skipReason,
       };
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
-      const error =
-        err instanceof Error ? err.message : String(err);
-      result = {
-        testId: test.testId,
-        name: test.name,
-        rfc: test.rfc,
-        section: test.section,
-        required: test.required,
-        status: "fail",
-        durationMs,
-        error,
-      };
+    } else {
+      try {
+        await test.fn(ctx);
+        const durationMs = Math.round(performance.now() - start);
+        result = {
+          testId: test.testId,
+          name: test.name,
+          rfc: test.rfc,
+          section: test.section,
+          required: test.required,
+          status: "pass",
+          durationMs,
+        };
+      } catch (err) {
+        const durationMs = Math.round(performance.now() - start);
+        const error =
+          err instanceof Error ? err.message : String(err);
+        result = {
+          testId: test.testId,
+          name: test.name,
+          rfc: test.rfc,
+          section: test.section,
+          required: test.required,
+          status: "fail",
+          durationMs,
+          error,
+        };
+      }
     }
 
     // Drain recorded HTTP exchanges from clients

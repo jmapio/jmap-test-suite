@@ -4,14 +4,11 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
   {
     id: "set-create-submission",
     name: "EmailSubmission/set creates a submission (sends email)",
+    runIf: (ctx) =>
+      !ctx.config.users.secondary ? "No secondary user configured"
+      : ctx.identityIds.length === 0 ? "No identities available"
+      : true,
     fn: async (ctx) => {
-      if (!ctx.config.accounts.secondary) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
-
       // Create a fresh draft to send
       const draftResult = await ctx.client.call("Email/set", {
         accountId: ctx.accountId,
@@ -66,14 +63,11 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
   {
     id: "set-create-with-envelope",
     name: "EmailSubmission/set with explicit envelope",
+    runIf: (ctx) =>
+      !ctx.config.users.secondary ? "No secondary user configured"
+      : ctx.identityIds.length === 0 ? "No identities available"
+      : true,
     fn: async (ctx) => {
-      if (!ctx.config.accounts.secondary) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
-
       const draftResult = await ctx.client.call("Email/set", {
         accountId: ctx.accountId,
         create: {
@@ -131,18 +125,13 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
   {
     id: "set-on-success-update-email",
     name: "EmailSubmission/set onSuccessUpdateEmail moves to sent and removes $draft",
+    runIf: (ctx) =>
+      !ctx.config.users.secondary ? "No secondary user configured"
+      : ctx.identityIds.length === 0 ? "No identities available"
+      : !ctx.roleMailboxes["sent"] ? "No sent mailbox found"
+      : true,
     fn: async (ctx) => {
-      if (!ctx.config.accounts.secondary) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
-
       const sentMailbox = ctx.roleMailboxes["sent"];
-      if (!sentMailbox) {
-        throw new Error("SKIP: No sent mailbox found");
-      }
 
       const draftResult = await ctx.client.call("Email/set", {
         accountId: ctx.accountId,
@@ -191,11 +180,27 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
         ]
       );
 
-      // Should get both EmailSubmission/set and Email/set responses
-      ctx.assertGreaterOrEqual(response.methodResponses.length, 1);
+      // Must get both EmailSubmission/set and implicit Email/set responses synchronously
+      ctx.assertGreaterOrEqual(
+        response.methodResponses.length,
+        2,
+        "Response must include both EmailSubmission/set and implicit Email/set"
+      );
 
-      // Verify the email was moved
-      await new Promise((r) => setTimeout(r, 500)); // Brief pause for server processing
+      // Verify EmailSubmission/set response is first
+      const [subName] = response.methodResponses[0];
+      ctx.assertEqual(subName, "EmailSubmission/set");
+
+      // Verify implicit Email/set response is present
+      const emailSetResponse = response.methodResponses.find(
+        ([name]) => name === "Email/set"
+      );
+      ctx.assertTruthy(
+        emailSetResponse,
+        "Implicit Email/set from onSuccessUpdateEmail must appear in methodResponses"
+      );
+
+      // Verify the email was moved (response was synchronous, no delay needed)
       const getResult = await ctx.client.call("Email/get", {
         accountId: ctx.accountId,
         ids: [emailId],
@@ -223,14 +228,11 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
   {
     id: "set-submission-properties",
     name: "EmailSubmission object has required properties",
+    runIf: (ctx) =>
+      !ctx.config.users.secondary ? "No secondary user configured"
+      : ctx.identityIds.length === 0 ? "No identities available"
+      : true,
     fn: async (ctx) => {
-      if (!ctx.config.accounts.secondary) {
-        throw new Error("SKIP: No secondary account configured");
-      }
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
-
       const draftResult = await ctx.client.call("Email/set", {
         accountId: ctx.accountId,
         create: {
@@ -288,11 +290,8 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
   {
     id: "set-no-recipients-error",
     name: "EmailSubmission/set MUST reject email with no recipients",
+    runIf: (ctx) => ctx.identityIds.length === 0 ? "No identities available" : true,
     fn: async (ctx) => {
-      if (ctx.identityIds.length === 0) {
-        throw new Error("SKIP: No identities available");
-      }
-
       // Create a draft with no To/Cc/Bcc
       const draftResult = await ctx.client.call("Email/set", {
         accountId: ctx.accountId,

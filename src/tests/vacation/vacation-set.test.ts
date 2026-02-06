@@ -1,15 +1,16 @@
 import { defineTests } from "../../runner/test-registry.js";
 import { hasCapability } from "../../client/session.js";
+import type { TestContext } from "../../runner/test-context.js";
+
+const needsVacation = (ctx: TestContext): true | string =>
+  hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse") ? true : "Server does not support vacationresponse";
 
 defineTests({ rfc: "RFC8621", section: "8.2", category: "vacation" }, [
   {
     id: "set-enable-vacation",
     name: "VacationResponse/set can enable vacation response",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
-
       // Get current state
       const getResult = await ctx.client.call("VacationResponse/get", {
         accountId: ctx.accountId,
@@ -54,11 +55,8 @@ defineTests({ rfc: "RFC8621", section: "8.2", category: "vacation" }, [
   {
     id: "set-disable-vacation",
     name: "VacationResponse/set can disable vacation response",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
-
       await ctx.client.call("VacationResponse/set", {
         accountId: ctx.accountId,
         update: {
@@ -77,11 +75,8 @@ defineTests({ rfc: "RFC8621", section: "8.2", category: "vacation" }, [
   {
     id: "set-dates",
     name: "VacationResponse/set can set fromDate and toDate",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
-
       const fromDate = "2026-03-01T00:00:00Z";
       const toDate = "2026-03-15T00:00:00Z";
 
@@ -112,11 +107,8 @@ defineTests({ rfc: "RFC8621", section: "8.2", category: "vacation" }, [
   {
     id: "set-html-body",
     name: "VacationResponse/set can set htmlBody",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
-
       await ctx.client.call("VacationResponse/set", {
         accountId: ctx.accountId,
         update: {
@@ -145,11 +137,8 @@ defineTests({ rfc: "RFC8621", section: "8.2", category: "vacation" }, [
   {
     id: "set-cannot-create",
     name: "VacationResponse/set rejects create (singleton)",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
-
       const result = await ctx.client.call("VacationResponse/set", {
         accountId: ctx.accountId,
         create: {
@@ -170,11 +159,8 @@ defineTests({ rfc: "RFC8621", section: "8.2", category: "vacation" }, [
   {
     id: "set-cannot-destroy",
     name: "VacationResponse/set rejects destroy (singleton)",
+    runIf: needsVacation,
     fn: async (ctx) => {
-      if (!hasCapability(ctx.session, "urn:ietf:params:jmap:vacationresponse")) {
-        throw new Error("SKIP: Server does not support vacationresponse");
-      }
-
       const result = await ctx.client.call("VacationResponse/set", {
         accountId: ctx.accountId,
         destroy: ["singleton"],

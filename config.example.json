@@ -1,6 +1,6 @@
 {
   "sessionUrl": "https://jmap.example.com/.well-known/jmap",
-  "accounts": {
+  "users": {
     "primary": {
       "username": "testuser@example.com",
       "password": "secret"
