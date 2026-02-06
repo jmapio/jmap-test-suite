@@ -58,6 +58,28 @@ export async function cleanAccount(
   } else {
     process.stderr.write("Account is clean.\n");
   }
+
+  // Always clean up stale push subscriptions from previous runs
+  await cleanPushSubscriptions(ctx);
+}
+
+async function cleanPushSubscriptions(ctx: TestContext): Promise<void> {
+  try {
+    const result = await ctx.client.call("PushSubscription/get", {
+      ids: null,
+    });
+    const list = result.list as Array<{ id: string }>;
+    if (list.length > 0) {
+      await ctx.client.call("PushSubscription/set", {
+        destroy: list.map((ps) => ps.id),
+      });
+      process.stderr.write(
+        `  Cleaned ${list.length} stale push subscription(s)\n`
+      );
+    }
+  } catch {
+    // PushSubscription may not be supported; ignore
+  }
 }
 
 async function forceClean(

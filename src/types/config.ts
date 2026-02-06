@@ -12,7 +12,6 @@ export interface Config {
   serverInfo?: string;
   authMethod: "basic" | "bearer";
   timeout: number;
-  noLocalCallback: boolean;
   verbose: boolean;
 }
 
@@ -60,7 +59,6 @@ export function validateConfig(raw: unknown): Config {
     serverInfo: typeof obj.serverInfo === "string" ? obj.serverInfo : undefined,
     authMethod: (obj.authMethod as "basic" | "bearer") || "basic",
     timeout: typeof obj.timeout === "number" ? obj.timeout : 30000,
-    noLocalCallback: obj.noLocalCallback === true,
     verbose: obj.verbose === true,
   };
 }

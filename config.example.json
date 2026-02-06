@@ -13,6 +13,5 @@
   },
   "authMethod": "basic",
   "timeout": 30000,
-  "noLocalCallback": false,
   "verbose": false
 }

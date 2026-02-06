@@ -37,7 +37,6 @@ Copy `config.example.json` and fill in your server details:
   },
   "authMethod": "basic",
   "timeout": 30000,
-  "noLocalCallback": false,
   "verbose": false
 }
 ```
@@ -50,7 +49,6 @@ Copy `config.example.json` and fill in your server details:
 | `users.secondary` | no | Second user for EmailSubmission tests (sending email to a real recipient) |
 | `authMethod` | no | `"basic"` (default) or `"bearer"` |
 | `timeout` | no | Request timeout in ms (default: 30000) |
-| `noLocalCallback` | no | Set `true` if the server can't reach localhost (skips PushSubscription callback tests) |
 | `verbose` | no | Log HTTP request/response bodies |
 
 ## CLI options
@@ -94,7 +92,7 @@ Tests are marked **required** or **recommended**. The summary distinguishes betw
 Tests skip automatically when preconditions aren't met:
 
 - No `users.secondary` configured — EmailSubmission tests skip
-- `noLocalCallback: true` — PushSubscription callback tests skip
+- [smee.io](https://smee.io) unreachable — PushSubscription callback tests skip
 - Server missing `urn:ietf:params:jmap:vacationresponse` — VacationResponse tests skip
 - Server missing `urn:ietf:params:jmap:submission` — Identity tests skip
 - Primary user has only one mail account — cross-account (Email/copy, Blob/copy) tests skip
@@ -232,7 +230,6 @@ Use (or adapt) the included `config-stalwart.json`:
   },
   "authMethod": "basic",
   "timeout": 30000,
-  "noLocalCallback": false,
   "verbose": false
 }
 ```
@@ -254,6 +251,8 @@ src/
 │   ├── test-runner.ts       # Orchestration: connect, clean, seed, run, teardown
 │   ├── test-registry.ts     # Test registration, filtering, glob matching
 │   └── test-context.ts      # Test context: assertions, shared state
+├── helpers/
+│   └── smee.ts              # Smee.io webhook proxy for push subscription tests
 ├── setup/                   # Fixtures
 │   ├── clean-account.ts     # Wipe account before run
 │   ├── seed-data.ts         # Create test mailboxes, emails, blobs

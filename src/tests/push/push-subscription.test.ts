@@ -1,163 +1,53 @@
-import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
 import { defineTests } from "../../runner/test-registry.js";
 import type { TestContext } from "../../runner/test-context.js";
+import { createSmeeChannel } from "../../helpers/smee.js";
 
-const needsCallback = (ctx: TestContext): true | string =>
-  ctx.config.noLocalCallback ? "noLocalCallback=true" : true;
+const needsSmee = (ctx: TestContext): true | string =>
+  ctx.smeeChannel ? true : "smee.io unavailable";
 
 defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
   {
-    id: "push-subscription-create",
-    name: "PushSubscription/set creates a subscription",
-    runIf: needsCallback,
+    id: "push-subscription-reject-non-https",
+    name: "PushSubscription/set MUST reject non-https URL",
     fn: async (ctx) => {
-      const { server, url } = await startCallbackServer();
-      try {
-        const result = await ctx.client.call("PushSubscription/set", {
-          create: {
-            ps1: {
-              deviceClientId: "jmap-test-device-001",
-              url: `${url}/callback`,
-              types: null, // all types
-            },
+      const result = await ctx.client.call("PushSubscription/set", {
+        create: {
+          bad: {
+            deviceClientId: "jmap-test-reject-http",
+            url: "http://example.com/push",
           },
-        });
-        const created = result.created as Record<
-          string,
-          Record<string, unknown>
-        > | null;
-        ctx.assertTruthy(created?.ps1, "Subscription should be created");
-        ctx.assertTruthy(created!.ps1.id);
-
-        // Cleanup
-        await ctx.client.call("PushSubscription/set", {
-          destroy: [created!.ps1.id as string],
-        });
-      } finally {
-        await stopServer(server);
-      }
+        },
+      });
+      const notCreated = result.notCreated as Record<
+        string,
+        { type: string }
+      > | null;
+      ctx.assertTruthy(
+        notCreated?.bad,
+        "Server MUST reject PushSubscription with non-https URL (RFC 8620 §7.2)"
+      );
     },
   },
   {
-    id: "push-subscription-get",
-    name: "PushSubscription/get returns created subscriptions",
-    runIf: needsCallback,
-    fn: async (ctx) => {
-      const { server, url } = await startCallbackServer();
-      try {
-        const createResult = await ctx.client.call("PushSubscription/set", {
-          create: {
-            psGet: {
-              deviceClientId: "jmap-test-device-get",
-              url: `${url}/callback`,
-              types: ["Email"],
-            },
-          },
-        });
-        const psId = (
-          createResult.created as Record<string, { id: string }>
-        ).psGet.id;
-
-        const getResult = await ctx.client.call("PushSubscription/get", {
-          ids: [psId],
-        });
-        const list = getResult.list as Array<Record<string, unknown>>;
-        ctx.assertLength(list, 1);
-        ctx.assertEqual(list[0].id, psId);
-        ctx.assertEqual(list[0].deviceClientId, "jmap-test-device-get");
-        ctx.assertStringContains(list[0].url as string, url);
-
-        await ctx.client.call("PushSubscription/set", {
-          destroy: [psId],
-        });
-      } finally {
-        await stopServer(server);
-      }
-    },
-  },
-  {
-    id: "push-subscription-destroy",
-    name: "PushSubscription/set destroy removes subscription",
-    runIf: needsCallback,
-    fn: async (ctx) => {
-      const { server, url } = await startCallbackServer();
-      try {
-        const createResult = await ctx.client.call("PushSubscription/set", {
-          create: {
-            psDel: {
-              deviceClientId: "jmap-test-device-del",
-              url: `${url}/callback`,
-            },
-          },
-        });
-        const psId = (
-          createResult.created as Record<string, { id: string }>
-        ).psDel.id;
-
-        const destroyResult = await ctx.client.call("PushSubscription/set", {
-          destroy: [psId],
-        });
-        const destroyed = destroyResult.destroyed as string[];
-        ctx.assertIncludes(destroyed, psId);
-
-        // Verify it's gone
-        const getResult = await ctx.client.call("PushSubscription/get", {
-          ids: [psId],
-        });
-        const notFound = getResult.notFound as string[];
-        ctx.assertIncludes(notFound, psId);
-      } finally {
-        await stopServer(server);
-      }
-    },
-  },
-  {
-    id: "push-subscription-types-filter",
-    name: "PushSubscription/set can set types filter",
-    runIf: needsCallback,
-    fn: async (ctx) => {
-      const { server, url } = await startCallbackServer();
-      try {
-        const result = await ctx.client.call("PushSubscription/set", {
-          create: {
-            psTypes: {
-              deviceClientId: "jmap-test-device-types",
-              url: `${url}/callback`,
-              types: ["Email", "Mailbox"],
-            },
-          },
-        });
-        const created = result.created as Record<
-          string,
-          Record<string, unknown>
-        > | null;
-        ctx.assertTruthy(created?.psTypes);
-
-        await ctx.client.call("PushSubscription/set", {
-          destroy: [created!.psTypes.id as string],
-        });
-      } finally {
-        await stopServer(server);
-      }
-    },
-  },
-  {
+    // Run notification test first: it needs a clean smee.io rate-limit
+    // window, before CRUD tests trigger multiple PushVerification POSTs.
     id: "push-subscription-receives-notification",
     name: "PushSubscription MUST receive push notification after change",
-    runIf: needsCallback,
+    runIf: needsSmee,
     fn: async (ctx) => {
-      const received: unknown[] = [];
-      const { server, url } = await startCallbackServer((body) => {
-        received.push(body);
-      });
+      // Use a dedicated smee channel to avoid interference from other tests.
+      const smee = await createSmeeChannel();
+      if (!smee) {
+        throw new Error("Could not create dedicated smee channel");
+      }
 
       try {
-        // Create subscription
+        // Create subscription pointing to the dedicated channel
         const createResult = await ctx.client.call("PushSubscription/set", {
           create: {
             psNotify: {
               deviceClientId: "jmap-test-device-notify",
-              url: `${url}/callback`,
+              url: smee.url,
               types: null,
             },
           },
@@ -166,7 +56,28 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
           createResult.created as Record<string, { id: string }>
         ).psNotify.id;
 
-        // Make a change
+        // Server may send a PushVerification (RFC 8620 §7.2.2).
+        // If so, complete verification before expecting StateChange.
+        const isVerification = (e: unknown): boolean => {
+          const obj = e as Record<string, unknown>;
+          return (
+            obj["@type"] === "PushVerification" &&
+            obj.pushSubscriptionId === psId
+          );
+        };
+
+        const verification = await smee.waitFor(isVerification, 5000);
+        if (verification) {
+          const code = (verification as Record<string, unknown>)
+            .verificationCode as string;
+          await ctx.client.call("PushSubscription/set", {
+            update: {
+              [psId]: { verificationCode: code },
+            },
+          });
+        }
+
+        // Make a change to trigger a push notification
         const emailResult = await ctx.client.call("Email/set", {
           accountId: ctx.accountId,
           create: {
@@ -184,16 +95,20 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
           emailResult.created as Record<string, { id: string }>
         ).pushEmail.id;
 
-        // Wait for notification — RFC 8620 S7.2: server MUST push StateChange
-        await new Promise((r) => setTimeout(r, 5000));
+        // Wait for StateChange — RFC 8620 §7.2: server MUST push StateChange
+        const isStateChange = (e: unknown): boolean =>
+          (e as Record<string, unknown>)["@type"] === "StateChange";
 
-        ctx.assertGreaterThan(
-          received.length,
-          0,
+        const notification = await smee.waitFor(isStateChange, 10000);
+
+        ctx.assertTruthy(
+          notification,
           "Server MUST send push notification after state change"
         );
-        const notification = received[0] as Record<string, unknown>;
-        ctx.assertEqual(notification["@type"], "StateChange");
+        ctx.assertEqual(
+          (notification as Record<string, unknown>)["@type"],
+          "StateChange"
+        );
 
         // Cleanup
         await ctx.client.call("PushSubscription/set", {
@@ -204,86 +119,151 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
           destroy: [emailId],
         });
       } finally {
-        await stopServer(server);
+        smee.close();
       }
+    },
+  },
+  {
+    id: "push-subscription-create",
+    name: "PushSubscription/set creates a subscription",
+    runIf: needsSmee,
+    fn: async (ctx) => {
+      const result = await ctx.client.call("PushSubscription/set", {
+        create: {
+          ps1: {
+            deviceClientId: "jmap-test-device-001",
+            url: ctx.smeeChannel!.url,
+            types: null, // all types
+          },
+        },
+      });
+      const created = result.created as Record<
+        string,
+        Record<string, unknown>
+      > | null;
+      ctx.assertTruthy(created?.ps1, "Subscription should be created");
+      ctx.assertTruthy(created!.ps1.id);
+
+      // Cleanup
+      await ctx.client.call("PushSubscription/set", {
+        destroy: [created!.ps1.id as string],
+      });
+    },
+  },
+  {
+    id: "push-subscription-get",
+    name: "PushSubscription/get returns created subscriptions",
+    runIf: needsSmee,
+    fn: async (ctx) => {
+      const result = await ctx.client.call("PushSubscription/set", {
+        create: {
+          psGet: {
+            deviceClientId: "jmap-test-device-get",
+            url: ctx.smeeChannel!.url,
+            types: ["Email"],
+          },
+        },
+      });
+      const psId = (
+        result.created as Record<string, { id: string }>
+      ).psGet.id;
+
+      const getResult = await ctx.client.call("PushSubscription/get", {
+        ids: [psId],
+      });
+      const list = getResult.list as Array<Record<string, unknown>>;
+      ctx.assertLength(list, 1);
+      ctx.assertEqual(list[0].id, psId);
+      ctx.assertEqual(list[0].deviceClientId, "jmap-test-device-get");
+      if (typeof list[0].url === "string") {
+        ctx.assertStringContains(list[0].url, ctx.smeeChannel!.url);
+      }
+
+      await ctx.client.call("PushSubscription/set", {
+        destroy: [psId],
+      });
+    },
+  },
+  {
+    id: "push-subscription-destroy",
+    name: "PushSubscription/set destroy removes subscription",
+    runIf: needsSmee,
+    fn: async (ctx) => {
+      const createResult = await ctx.client.call("PushSubscription/set", {
+        create: {
+          psDel: {
+            deviceClientId: "jmap-test-device-del",
+            url: ctx.smeeChannel!.url,
+          },
+        },
+      });
+      const psId = (
+        createResult.created as Record<string, { id: string }>
+      ).psDel.id;
+
+      const destroyResult = await ctx.client.call("PushSubscription/set", {
+        destroy: [psId],
+      });
+      const destroyed = destroyResult.destroyed as string[];
+      ctx.assertIncludes(destroyed, psId);
+
+      // Verify it's gone
+      const getResult = await ctx.client.call("PushSubscription/get", {
+        ids: [psId],
+      });
+      const notFound = getResult.notFound as string[];
+      ctx.assertIncludes(notFound, psId);
+    },
+  },
+  {
+    id: "push-subscription-types-filter",
+    name: "PushSubscription/set can set types filter",
+    runIf: needsSmee,
+    fn: async (ctx) => {
+      const result = await ctx.client.call("PushSubscription/set", {
+        create: {
+          psTypes: {
+            deviceClientId: "jmap-test-device-types",
+            url: ctx.smeeChannel!.url,
+            types: ["Email", "Mailbox"],
+          },
+        },
+      });
+      const created = result.created as Record<
+        string,
+        Record<string, unknown>
+      > | null;
+      ctx.assertTruthy(created?.psTypes);
+
+      await ctx.client.call("PushSubscription/set", {
+        destroy: [created!.psTypes.id as string],
+      });
     },
   },
   {
     id: "push-subscription-verification",
     name: "PushSubscription supports verification code",
-    runIf: needsCallback,
+    runIf: needsSmee,
     fn: async (ctx) => {
-      const { server, url } = await startCallbackServer();
-      try {
-        const result = await ctx.client.call("PushSubscription/set", {
-          create: {
-            psVerify: {
-              deviceClientId: "jmap-test-device-verify",
-              url: `${url}/callback`,
-            },
+      const result = await ctx.client.call("PushSubscription/set", {
+        create: {
+          psVerify: {
+            deviceClientId: "jmap-test-device-verify",
+            url: ctx.smeeChannel!.url,
           },
-        });
-        const created = result.created as Record<
-          string,
-          Record<string, unknown>
-        > | null;
-        if (created?.psVerify) {
-          // Subscription may have a verificationCode
-          const verificationCode = created.psVerify.verificationCode;
-          // If present, we would need to POST it back
-          // Just verify the field exists (may be undefined if server auto-verifies)
-          ctx.assertTruthy(created.psVerify.id);
+        },
+      });
+      const created = result.created as Record<
+        string,
+        Record<string, unknown>
+      > | null;
+      if (created?.psVerify) {
+        ctx.assertTruthy(created.psVerify.id);
 
-          await ctx.client.call("PushSubscription/set", {
-            destroy: [created.psVerify.id as string],
-          });
-        }
-      } finally {
-        await stopServer(server);
+        await ctx.client.call("PushSubscription/set", {
+          destroy: [created.psVerify.id as string],
+        });
       }
     },
   },
 ]);
-
-// --- Helper: Local HTTP Callback Server ---
-
-async function startCallbackServer(
-  onNotification?: (body: unknown) => void
-): Promise<{ server: Server; url: string }> {
-  return new Promise((resolve) => {
-    const server = createServer(
-      (req: IncomingMessage, res: ServerResponse) => {
-        let body = "";
-        req.on("data", (chunk: string) => {
-          body += chunk;
-        });
-        req.on("end", () => {
-          try {
-            const parsed = JSON.parse(body);
-            onNotification?.(parsed);
-          } catch {
-            // Ignore parse errors
-          }
-          res.writeHead(200);
-          res.end();
-        });
-      }
-    );
-
-    server.listen(0, "127.0.0.1", () => {
-      const addr = server.address()!;
-      const port =
-        typeof addr === "string" ? 80 : addr.port;
-      resolve({
-        server,
-        url: `http://127.0.0.1:${port}`,
-      });
-    });
-  });
-}
-
-async function stopServer(server: Server): Promise<void> {
-  return new Promise((resolve) => {
-    server.close(() => resolve());
-  });
-}

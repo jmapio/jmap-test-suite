@@ -8,6 +8,7 @@ import { cleanAccount } from "../setup/clean-account.js";
 import { seedData } from "../setup/seed-data.js";
 import { teardown } from "../setup/teardown.js";
 import { printProgress, printSummaryLine } from "../reporter/console-reporter.js";
+import { createSmeeChannel } from "../helpers/smee.js";
 
 export interface RunOptions {
   config: Config;
@@ -72,18 +73,23 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
     );
   }
 
+  // Set up smee.io channel for push subscription tests
+  process.stderr.write("Connecting to smee.io for push subscription tests...\n");
+  const smeeChannel = await createSmeeChannel();
+  if (smeeChannel) {
+    process.stderr.write(`Smee channel: ${smeeChannel.url}\n\n`);
+  } else {
+    process.stderr.write(
+      "⚠ Could not reach smee.io — push subscription callback tests will skip\n\n"
+    );
+  }
+
   // Build skip categories
   const skipCategories: string[] = [];
   if (!config.users.secondary) {
     skipCategories.push("submission");
     process.stderr.write(
       "⚠ No secondary user configured — skipping EmailSubmission tests\n"
-    );
-  }
-  if (config.noLocalCallback) {
-    skipCategories.push("push-subscription");
-    process.stderr.write(
-      "⚠ noLocalCallback=true — skipping PushSubscription callback tests\n"
     );
   }
 
@@ -99,6 +105,9 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
   }
   if (secondaryClient) {
     ctx.secondaryClient = secondaryClient;
+  }
+  if (smeeChannel) {
+    ctx.smeeChannel = smeeChannel;
   }
 
   // Clean account
@@ -186,6 +195,9 @@ export async function runTests(options: RunOptions): Promise<TestResult[]> {
       `Warning: teardown error: ${err instanceof Error ? err.message : err}\n`
     );
   }
+
+  // Close smee channel
+  smeeChannel?.close();
 
   printSummaryLine(results);
   return results;

@@ -2,6 +2,7 @@ import type { JmapClient } from "../client/jmap-client.js";
 import type { Session, Id } from "../types/jmap-core.js";
 import type { Config } from "../types/config.js";
 import type { HttpExchange } from "../types/report.js";
+import type { SmeeChannel } from "../helpers/smee.js";
 
 export class TestContext {
   public client: JmapClient;
@@ -35,6 +36,9 @@ export class TestContext {
 
   /** Second client for secondary account (if configured) */
   public secondaryClient?: JmapClient;
+
+  /** Smee.io channel for push subscription tests (undefined if smee.io is unreachable) */
+  public smeeChannel?: SmeeChannel;
 
   constructor(client: JmapClient, config: Config) {
     this.client = client;
