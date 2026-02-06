@@ -1,15 +1,20 @@
-# jmap-test
+# JMAP Conformance Tests
 
-Conformance test suite for JMAP servers, covering [RFC 8620](https://datatracker.ietf.org/doc/html/rfc8620) (JMAP core) and [RFC 8621](https://datatracker.ietf.org/doc/html/rfc8621) (JMAP Mail).
+This repo contains a set of tests for the JMAP core & email specs.
 
-Tests a live server over HTTP. Points at a JMAP session URL, authenticates, and runs ~300 tests that exercise the protocol as specified by the RFCs.
+[Server conformance report is here](https://seph.au/jmap-report.html)
+
+These tests currently cover [RFC 8620](https://datatracker.ietf.org/doc/html/rfc8620) (JMAP core) and [RFC 8621](https://datatracker.ietf.org/doc/html/rfc8621) (JMAP Mail). Other JMAP protocols (contacts & calendars) may be supported in the future.
+
+The tests run via speaking JMAP to a live server, using a test account with an empty inbox.
+
 
 ## Quick start
 
 ```bash
 npm install
 npm run build
-node dist/cli.js -c config.json -f
+node dist/cli.js -c config.json
 ```
 
 ## Configuration
@@ -273,3 +278,7 @@ src/
     ├── push/
     └── search-snippet/
 ```
+
+## Authorship
+
+This project was largely written (vibe coded) by Claude Code.
