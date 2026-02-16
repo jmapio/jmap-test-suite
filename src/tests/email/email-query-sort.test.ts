@@ -24,9 +24,11 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
       for (let i = 1; i < Math.min(ids.length, 5); i++) {
         const prev = idToDate.get(ids[i - 1]);
         const curr = idToDate.get(ids[i]);
-        if (prev !== undefined && curr !== undefined) {
-          ctx.assertGreaterOrEqual(prev, curr, "receivedAt should be descending");
-        }
+        ctx.assert(
+          prev !== undefined && curr !== undefined,
+          `Email/get must return receivedAt for all queried ids (missing data for index ${i})`
+        );
+        ctx.assertGreaterOrEqual(prev!, curr!, "receivedAt should be descending");
       }
     },
   },
@@ -52,9 +54,11 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
       for (let i = 1; i < ids.length; i++) {
         const prev = idToDate.get(ids[i - 1]);
         const curr = idToDate.get(ids[i]);
-        if (prev !== undefined && curr !== undefined) {
-          ctx.assert(prev <= curr, "receivedAt should be ascending");
-        }
+        ctx.assert(
+          prev !== undefined && curr !== undefined,
+          `Email/get must return receivedAt for all queried ids (missing data for index ${i})`
+        );
+        ctx.assert(prev! <= curr!, "receivedAt should be ascending");
       }
     },
   },
@@ -95,6 +99,33 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
       });
       const ids = result.ids as string[];
       ctx.assertGreaterThan(ids.length, 1);
+
+      // RFC 8621 §4.4.2: sort by from uses the display value of the first
+      // EmailAddress (name, or email if name is null)
+      const getResult = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids,
+        properties: ["from"],
+      });
+      const list = getResult.list as Array<{
+        id: string;
+        from: Array<{ name: string | null; email: string }> | null;
+      }>;
+      const idToDisplay = new Map(
+        list.map((e) => {
+          const addr = e.from?.[0];
+          return [e.id, addr?.name || addr?.email || ""];
+        })
+      );
+
+      for (let i = 1; i < ids.length; i++) {
+        const prev = idToDisplay.get(ids[i - 1])!;
+        const curr = idToDisplay.get(ids[i])!;
+        ctx.assert(
+          prev.localeCompare(curr) <= 0,
+          `Expected from '${prev}' <= '${curr}' in ascending from sort`
+        );
+      }
     },
   },
   {
@@ -108,7 +139,34 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
         limit: 10,
       });
       const ids = result.ids as string[];
-      ctx.assertGreaterThan(ids.length, 0);
+      ctx.assertGreaterThan(ids.length, 1);
+
+      // RFC 8621 §4.4.2: sort by to uses the display value of the first
+      // EmailAddress (name, or email if name is null)
+      const getResult = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids,
+        properties: ["to"],
+      });
+      const list = getResult.list as Array<{
+        id: string;
+        to: Array<{ name: string | null; email: string }> | null;
+      }>;
+      const idToDisplay = new Map(
+        list.map((e) => {
+          const addr = e.to?.[0];
+          return [e.id, addr?.name || addr?.email || ""];
+        })
+      );
+
+      for (let i = 1; i < ids.length; i++) {
+        const prev = idToDisplay.get(ids[i - 1])!;
+        const curr = idToDisplay.get(ids[i])!;
+        ctx.assert(
+          prev.localeCompare(curr) <= 0,
+          `Expected to '${prev}' <= '${curr}' in ascending to sort`
+        );
+      }
     },
   },
   {
@@ -163,9 +221,11 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
       for (let i = 1; i < ids.length; i++) {
         const prev = idToDate.get(ids[i - 1]);
         const curr = idToDate.get(ids[i]);
-        if (prev !== undefined && curr !== undefined) {
-          ctx.assert(prev <= curr, "sentAt should be ascending");
-        }
+        ctx.assert(
+          prev !== undefined && curr !== undefined,
+          `Email/get must return sentAt for all queried ids (missing data for index ${i})`
+        );
+        ctx.assert(prev! <= curr!, "sentAt should be ascending");
       }
     },
   },
@@ -179,8 +239,42 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
         sort: [{ property: "hasKeyword", keyword: "$flagged", isAscending: false }],
       });
       const ids = result.ids as string[];
-      ctx.assertGreaterThan(ids.length, 0);
-      // sort-test-2 has $flagged, should come first when descending
+      ctx.assertGreaterThan(ids.length, 1);
+
+      // Verify flagged emails come first (descending = true before false)
+      const getResult = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids,
+        properties: ["keywords"],
+      });
+      const list = getResult.list as Array<{
+        id: string;
+        keywords: Record<string, boolean> | null;
+      }>;
+      const idToFlagged = new Map(
+        list.map((e) => [e.id, !!(e.keywords && e.keywords["$flagged"])])
+      );
+
+      // In descending hasKeyword sort, all flagged emails must appear before non-flagged
+      let seenNonFlagged = false;
+      for (const id of ids) {
+        const flagged = idToFlagged.get(id)!;
+        if (!flagged) {
+          seenNonFlagged = true;
+        } else if (seenNonFlagged) {
+          ctx.assert(
+            false,
+            "Flagged email appeared after non-flagged email in descending hasKeyword sort"
+          );
+        }
+      }
+
+      // sort-test-2 has $flagged and should be first
+      ctx.assertEqual(
+        ids[0],
+        ctx.emailIds["sort-test-2"],
+        "sort-test-2 ($flagged) should be first in descending hasKeyword sort"
+      );
     },
   },
   {
@@ -197,7 +291,35 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
         limit: 10,
       });
       const ids = result.ids as string[];
-      ctx.assertGreaterThan(ids.length, 0);
+      ctx.assertGreaterThan(ids.length, 1);
+
+      // Verify the primary sort (receivedAt descending) is respected
+      const getResult = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids,
+        properties: ["receivedAt", "subject"],
+      });
+      const list = getResult.list as Array<{
+        id: string;
+        receivedAt: string;
+        subject: string;
+      }>;
+      const idToData = new Map(
+        list.map((e) => [
+          e.id,
+          { receivedAt: new Date(e.receivedAt).getTime(), subject: e.subject },
+        ])
+      );
+
+      for (let i = 1; i < ids.length; i++) {
+        const prev = idToData.get(ids[i - 1])!;
+        const curr = idToData.get(ids[i])!;
+        ctx.assert(
+          prev.receivedAt >= curr.receivedAt,
+          `Primary sort receivedAt should be descending: ` +
+            `${new Date(prev.receivedAt).toISOString()} >= ${new Date(curr.receivedAt).toISOString()}`
+        );
+      }
     },
   },
   {

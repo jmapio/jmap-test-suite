@@ -90,6 +90,10 @@ defineTests({ rfc: "RFC8621", section: "3.1", category: "thread" }, [
         accountId: ctx.accountId,
         ids: ["nonexistent-thread-xyz"],
       });
+      ctx.assert(
+        Array.isArray(result.notFound),
+        "Thread/get notFound MUST be a String[] (RFC 8620 §5.1), got " + JSON.stringify(result.notFound)
+      );
       const notFound = result.notFound as string[];
       ctx.assertIncludes(notFound, "nonexistent-thread-xyz");
     },

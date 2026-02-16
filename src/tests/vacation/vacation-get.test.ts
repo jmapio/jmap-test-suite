@@ -79,6 +79,10 @@ defineTests({ rfc: "RFC8621", section: "8.1", category: "vacation" }, [
         accountId: ctx.accountId,
         ids: ["not-singleton"],
       });
+      ctx.assert(
+        Array.isArray(result.notFound),
+        "VacationResponse/get notFound MUST be a String[] (RFC 8620 §5.1), got " + JSON.stringify(result.notFound)
+      );
       const notFound = result.notFound as string[];
       ctx.assertIncludes(notFound, "not-singleton");
     },

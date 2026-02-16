@@ -204,6 +204,10 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
       const destroyResult = await ctx.client.call("PushSubscription/set", {
         destroy: [psId],
       });
+      ctx.assert(
+        Array.isArray(destroyResult.destroyed),
+        "PushSubscription/set destroyed must be an array when subscription was destroyed, got " + JSON.stringify(destroyResult.destroyed)
+      );
       const destroyed = destroyResult.destroyed as string[];
       ctx.assertIncludes(destroyed, psId);
 
@@ -211,6 +215,10 @@ defineTests({ rfc: "RFC8620", section: "7.2", category: "push-subscription" }, [
       const getResult = await ctx.client.call("PushSubscription/get", {
         ids: [psId],
       });
+      ctx.assert(
+        Array.isArray(getResult.notFound),
+        "PushSubscription/get notFound MUST be a String[] (RFC 8620 §5.1), got " + JSON.stringify(getResult.notFound)
+      );
       const notFound = getResult.notFound as string[];
       ctx.assertIncludes(notFound, psId);
     },

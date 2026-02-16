@@ -142,6 +142,10 @@ defineTests({ rfc: "RFC8621", section: "2.5", category: "mailbox" }, [
         accountId: ctx.accountId,
         destroy: [mbId],
       });
+      ctx.assert(
+        Array.isArray(destroyResult.destroyed),
+        "Mailbox/set destroyed must be an array when mailbox was destroyed, got " + JSON.stringify(destroyResult.destroyed)
+      );
       const destroyed = destroyResult.destroyed as string[];
       ctx.assertIncludes(destroyed, mbId);
     },
@@ -157,9 +161,16 @@ defineTests({ rfc: "RFC8621", section: "2.5", category: "mailbox" }, [
       const notDestroyed = result.notDestroyed as Record<
         string,
         { type: string }
-      >;
-      ctx.assertTruthy(notDestroyed["nonexistent-mailbox-xyz"]);
-      ctx.assertEqual(notDestroyed["nonexistent-mailbox-xyz"].type, "notFound");
+      > | null;
+      ctx.assertTruthy(
+        notDestroyed,
+        "Mailbox/set notDestroyed must not be null when destroying a nonexistent id"
+      );
+      ctx.assertTruthy(
+        notDestroyed!["nonexistent-mailbox-xyz"],
+        "Expected notDestroyed to contain error for 'nonexistent-mailbox-xyz'"
+      );
+      ctx.assertEqual(notDestroyed!["nonexistent-mailbox-xyz"].type, "notFound");
     },
   },
   {
@@ -241,6 +252,10 @@ defineTests({ rfc: "RFC8621", section: "2.5", category: "mailbox" }, [
         destroy: [mbId],
         onDestroyRemoveEmails: true,
       });
+      ctx.assert(
+        Array.isArray(destroyResult.destroyed),
+        "Mailbox/set destroyed must be an array when mailbox was destroyed, got " + JSON.stringify(destroyResult.destroyed)
+      );
       const destroyed = destroyResult.destroyed as string[];
       ctx.assertIncludes(destroyed, mbId);
     },

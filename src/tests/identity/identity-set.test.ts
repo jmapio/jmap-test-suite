@@ -183,8 +183,15 @@ defineTests({ rfc: "RFC8621", section: "6.3", category: "identity" }, [
       const notUpdated = result.notUpdated as Record<
         string,
         { type: string }
-      >;
-      ctx.assertTruthy(notUpdated["nonexistent-identity-xyz"]);
+      > | null;
+      ctx.assertTruthy(
+        notUpdated,
+        "Identity/set notUpdated must not be null when updating a nonexistent id"
+      );
+      ctx.assertTruthy(
+        notUpdated!["nonexistent-identity-xyz"],
+        "Expected notUpdated to contain error for 'nonexistent-identity-xyz'"
+      );
     },
   },
 ]);

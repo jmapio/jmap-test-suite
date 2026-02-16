@@ -39,6 +39,10 @@ defineTests({ rfc: "RFC8621", section: "2.1", category: "mailbox" }, [
         accountId: ctx.accountId,
         ids: ["nonexistent-mailbox-xyz"],
       });
+      ctx.assert(
+        Array.isArray(result.notFound),
+        "Mailbox/get notFound MUST be a String[] (RFC 8620 §5.1), got " + JSON.stringify(result.notFound)
+      );
       const notFound = result.notFound as string[];
       ctx.assertIncludes(notFound, "nonexistent-mailbox-xyz");
     },

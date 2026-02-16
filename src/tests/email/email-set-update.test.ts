@@ -283,9 +283,16 @@ defineTests({ rfc: "RFC8621", section: "4.6", category: "email" }, [
       const notUpdated = result.notUpdated as Record<
         string,
         { type: string }
-      >;
-      ctx.assertTruthy(notUpdated["nonexistent-email-xyz"]);
-      ctx.assertEqual(notUpdated["nonexistent-email-xyz"].type, "notFound");
+      > | null;
+      ctx.assertTruthy(
+        notUpdated,
+        "Email/set notUpdated must not be null when updating a nonexistent id"
+      );
+      ctx.assertTruthy(
+        notUpdated!["nonexistent-email-xyz"],
+        "Expected notUpdated to contain error for 'nonexistent-email-xyz'"
+      );
+      ctx.assertEqual(notUpdated!["nonexistent-email-xyz"].type, "notFound");
     },
   },
 ]);

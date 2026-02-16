@@ -23,6 +23,10 @@ defineTests({ rfc: "RFC8621", section: "7.1", category: "submission" }, [
         accountId: ctx.accountId,
         ids: ["nonexistent-submission-xyz"],
       });
+      ctx.assert(
+        Array.isArray(result.notFound),
+        "EmailSubmission/get notFound MUST be a String[] (RFC 8620 §5.1), got " + JSON.stringify(result.notFound)
+      );
       const notFound = result.notFound as string[];
       ctx.assertIncludes(notFound, "nonexistent-submission-xyz");
     },

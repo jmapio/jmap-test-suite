@@ -97,6 +97,14 @@ defineTests({ rfc: "RFC8621", section: "4.9", category: "email" }, [
         accountId: ctx.accountId,
         blobIds: ["nonexistent-blob-xyz"],
       });
+      // Unlike standard Foo/get where notFound is always String[] (RFC 8620 §5.1),
+      // Email/parse defines notFound as Id[]|null — null meaning no blobs were
+      // unfound (RFC 8621 §4.9). Here we expect the blob to be unfound, so null
+      // would indicate a server bug.
+      ctx.assert(
+        Array.isArray(result.notFound),
+        "Expected notFound to contain 'nonexistent-blob-xyz', but got null (server claims all blob ids were found)"
+      );
       const notFound = result.notFound as string[];
       ctx.assertIncludes(notFound, "nonexistent-blob-xyz");
     },

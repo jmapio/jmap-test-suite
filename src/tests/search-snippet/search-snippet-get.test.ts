@@ -124,6 +124,14 @@ defineTests({ rfc: "RFC8621", section: "5", category: "search-snippet" }, [
         emailIds: ["nonexistent-email-xyz"],
         filter: { text: "test" },
       });
+      // Unlike standard Foo/get where notFound is always String[] (RFC 8620 §5.1),
+      // SearchSnippet/get defines notFound as Id[]|null — null meaning all ids
+      // were found (RFC 8621 §5). Here we expect the id to be unfound, so null
+      // would indicate a server bug.
+      ctx.assert(
+        Array.isArray(result.notFound),
+        "Expected notFound to contain 'nonexistent-email-xyz', but got null (server claims all email ids were found)"
+      );
       const notFound = result.notFound as string[];
       ctx.assertIncludes(notFound, "nonexistent-email-xyz");
     },

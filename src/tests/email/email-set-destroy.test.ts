@@ -26,6 +26,10 @@ defineTests({ rfc: "RFC8621", section: "4.6", category: "email" }, [
         accountId: ctx.accountId,
         destroy: [emailId],
       });
+      ctx.assert(
+        Array.isArray(destroyResult.destroyed),
+        "Email/set destroyed must be an array when emails were destroyed, got " + JSON.stringify(destroyResult.destroyed)
+      );
       const destroyed = destroyResult.destroyed as string[];
       ctx.assertIncludes(destroyed, emailId);
 
@@ -34,6 +38,10 @@ defineTests({ rfc: "RFC8621", section: "4.6", category: "email" }, [
         accountId: ctx.accountId,
         ids: [emailId],
       });
+      ctx.assert(
+        Array.isArray(getResult.notFound),
+        "Email/get notFound MUST be a String[] (RFC 8620 §5.1), got " + JSON.stringify(getResult.notFound)
+      );
       const notFound = getResult.notFound as string[];
       ctx.assertIncludes(notFound, emailId);
     },
@@ -70,6 +78,10 @@ defineTests({ rfc: "RFC8621", section: "4.6", category: "email" }, [
         accountId: ctx.accountId,
         destroy: ids,
       });
+      ctx.assert(
+        Array.isArray(destroyResult.destroyed),
+        "Email/set destroyed must be an array when emails were destroyed, got " + JSON.stringify(destroyResult.destroyed)
+      );
       const destroyed = destroyResult.destroyed as string[];
       ctx.assertLength(destroyed, 2);
     },
@@ -85,9 +97,16 @@ defineTests({ rfc: "RFC8621", section: "4.6", category: "email" }, [
       const notDestroyed = result.notDestroyed as Record<
         string,
         { type: string }
-      >;
-      ctx.assertTruthy(notDestroyed["nonexistent-email-xyz"]);
-      ctx.assertEqual(notDestroyed["nonexistent-email-xyz"].type, "notFound");
+      > | null;
+      ctx.assertTruthy(
+        notDestroyed,
+        "Email/set notDestroyed must not be null when destroying a nonexistent id"
+      );
+      ctx.assertTruthy(
+        notDestroyed!["nonexistent-email-xyz"],
+        "Expected notDestroyed to contain error for 'nonexistent-email-xyz'"
+      );
+      ctx.assertEqual(notDestroyed!["nonexistent-email-xyz"].type, "notFound");
     },
   },
   {
