@@ -228,7 +228,9 @@ tr.test-row td.test-id { font-family: monospace; cursor: pointer; color: #1565c0
 tr.test-row td.test-id:hover { text-decoration: underline; }
 tr.test-row a { color: #1565c0; text-decoration: none; }
 tr.test-row a:hover { text-decoration: underline; }
-td.result-cell { text-align: center; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 80px; }
+td.result-cell { text-align: center; font-weight: 600; font-size: 12px; cursor: pointer; min-width: 80px; user-select: none; }
+td.result-cell .disclosure, td.test-id .disclosure { display: inline-block; font-size: 8px; margin-right: 3px; transition: transform .2s; transform: rotate(0deg); vertical-align: middle; }
+td.result-cell.expanded .disclosure, td.test-id.expanded .disclosure { transform: rotate(90deg); }
 td.result-cell.pass { background: #e8f5e9; color: #2e7d32; }
 td.result-cell.fail-required { background: #ffebee; color: #c62828; }
 td.result-cell.fail-recommended { background: #fff8e1; color: #f57f17; }
@@ -240,13 +242,17 @@ td.result-cell.not-run { background: #f5f5f5; color: #bbb; }
 tr.detail-row { display: none; }
 tr.detail-row.visible { display: table-row; }
 tr.detail-row td { padding: 0; }
-.detail-content { padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #eee; font-size: 13px; }
+.detail-content { position: relative; padding: 12px 32px 12px 16px; background: #fafafa; border-bottom: 1px solid #eee; font-size: 13px; }
+.pane-close { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border: none; background: #ddd; color: #555; border-radius: 50%; cursor: pointer; font-size: 14px; line-height: 20px; text-align: center; padding: 0; }
+.pane-close:hover { background: #c62828; color: #fff; }
 .detail-content .error-msg { background: #fff5f5; border-left: 3px solid #c62828; padding: 8px 12px; margin: 4px 0; font-family: monospace; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
 .detail-content .duration { color: #888; font-size: 12px; margin-top: 4px; }
 tr.source-row { display: none; }
 tr.source-row.visible { display: table-row; }
 tr.source-row td { padding: 0; }
-.source-content { background: #1e1e1e; color: #d4d4d4; padding: 16px; overflow-x: auto; }
+.source-content { position: relative; background: #1e1e1e; color: #d4d4d4; padding: 16px 32px 16px 16px; overflow-x: auto; }
+.source-content .pane-close { background: #444; color: #aaa; }
+.source-content .pane-close:hover { background: #c62828; color: #fff; }
 .source-content .source-path { color: #888; font-size: 12px; margin-bottom: 8px; font-family: monospace; }
 .source-content pre { font-family: "SF Mono", "Fira Code", "Fira Mono", monospace; font-size: 12px; line-height: 1.5; margin: 0; }
 .source-content pre .line-num { color: #666; display: inline-block; width: 3em; text-align: right; margin-right: 1em; user-select: none; }
@@ -332,7 +338,7 @@ for (const cat of sortedCategories) {
     const srcFile = srcInfo?.path ?? "";
 
     html += `<tr class="test-row ${filterClass}" data-category="${escapeHtml(cat)}" data-testid="${escapeHtml(test.testId)}" data-src="${escapeHtml(srcFile)}">
-  <td class="test-id">${escapeHtml(test.testId)}</td>
+  <td class="test-id">${srcInfo ? '<span class="disclosure">&#9654;</span>' : ''}${escapeHtml(test.testId)}</td>
   <td>${escapeHtml(test.name)}</td>
   <td style="white-space:nowrap"><a href="${rfcUrl(test.rfc, test.section)}" target="_blank">${escapeHtml(test.rfc)} &sect;${escapeHtml(test.section)}</a></td>
   <td><span class="badge ${test.required ? "req" : "rec"}">${test.required ? "Required" : "Recommended"}</span></td>
@@ -343,7 +349,7 @@ for (const cat of sortedCategories) {
       if (!r) {
         html += `  <td class="result-cell not-run">-</td>\n`;
       } else {
-        html += `  <td class="result-cell ${statusClass(r)}" data-server="${escapeHtml(sName)}" data-testid="${escapeHtml(test.testId)}">${statusLabel(r)}</td>\n`;
+        html += `  <td class="result-cell ${statusClass(r)}" data-server="${escapeHtml(sName)}" data-testid="${escapeHtml(test.testId)}"><span class="disclosure">&#9654;</span>${statusLabel(r)}</td>\n`;
       }
     }
 
@@ -354,6 +360,7 @@ for (const cat of sortedCategories) {
       const r = test.results.get(sName);
       html += `<tr class="detail-row" data-detail-for="${escapeHtml(test.testId)}__${escapeHtml(sName)}">
   <td colspan="${totalCols}"><div class="detail-content">
+    <button class="pane-close" title="Close">&times;</button>
     <strong>${escapeHtml(sName)}</strong>: ${r ? statusLabel(r) : "Not run"}
     ${r?.error ? `<div class="error-msg">${escapeHtml(r.error)}</div>` : ""}
     ${r ? `<div class="duration">${r.durationMs}ms</div>` : ""}
@@ -366,6 +373,7 @@ for (const cat of sortedCategories) {
       const testIdShort = test.testId.split("/").slice(1).join("/");
       html += `<tr class="source-row" data-source-for="${escapeHtml(test.testId)}" data-src-path="${escapeHtml(srcInfo.path)}" data-highlight-id="${escapeHtml(testIdShort)}">
   <td colspan="${totalCols}"><div class="source-content">
+    <button class="pane-close" title="Close">&times;</button>
     <div class="source-path">${escapeHtml(srcInfo.path)}</div>
     <pre></pre>
   </div></td>
@@ -479,6 +487,29 @@ html += `<script>
     container.insertAdjacentHTML('beforeend', html);
   }
 
+  // Close button click -> hide pane and reset disclosure icon
+  document.querySelectorAll('.pane-close').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var row = btn.closest('tr');
+      row.classList.remove('visible');
+      // Reset the disclosure icon on the trigger cell
+      var detailKey = row.dataset.detailFor;
+      var sourceKey = row.dataset.sourceFor;
+      if (detailKey) {
+        var parts = detailKey.split('__');
+        var cell = document.querySelector('td.result-cell[data-testid="' + parts[0] + '"][data-server="' + parts[1] + '"]');
+        if (cell) cell.classList.remove('expanded');
+      } else if (sourceKey) {
+        var testRow = document.querySelector('tr.test-row[data-testid="' + sourceKey + '"]');
+        if (testRow) {
+          var td = testRow.querySelector('td.test-id');
+          if (td) td.classList.remove('expanded');
+        }
+      }
+    });
+  });
+
   // Result cell click -> toggle detail row
   document.querySelectorAll('td.result-cell[data-server]').forEach(function(cell) {
     cell.addEventListener('click', function(e) {
@@ -487,6 +518,7 @@ html += `<script>
       var detail = document.querySelector('tr[data-detail-for="' + key + '"]');
       if (detail) {
         detail.classList.toggle('visible');
+        cell.classList.toggle('expanded', detail.classList.contains('visible'));
         if (detail.classList.contains('visible')) {
           renderExchanges(detail, key);
         }
@@ -503,6 +535,7 @@ html += `<script>
       if (src) {
         renderSource(src);
         src.classList.toggle('visible');
+        td.classList.toggle('expanded', src.classList.contains('visible'));
         // Scroll highlighted line into view
         if (src.classList.contains('visible')) {
           var hl = src.querySelector('.highlight-line');
