@@ -8,7 +8,10 @@ defineTests({ rfc: "RFC8621", section: "4.4.3", category: "email" }, [
       // Without collapse
       const expandedResult = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {
+          // Just fetch our thread
+          subject: 'Project Alpha Discussion'
+        },
         sort: [{ property: "receivedAt", isAscending: false }],
         collapseThreads: false,
         calculateTotal: true,
@@ -18,13 +21,17 @@ defineTests({ rfc: "RFC8621", section: "4.4.3", category: "email" }, [
       // With collapse
       const collapsedResult = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {
+          subject: 'Project Alpha Discussion'
+        },
         sort: [{ property: "receivedAt", isAscending: false }],
         collapseThreads: true,
         calculateTotal: true,
       });
       const collapsedTotal = collapsedResult.total as number;
 
+      // There's a thread of 3 emails that should have been collapsed.
+      // See thread-starter in seed-data.ts.
       // Collapsed should have fewer results (our thread has 3 emails)
       ctx.assertLessThan(
         collapsedTotal,

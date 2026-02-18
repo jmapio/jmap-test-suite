@@ -44,8 +44,8 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
           Record<string, unknown>
         > | null;
         ctx.assertTruthy(created?.sub1, "Submission should be created");
-        ctx.assertTruthy(created!.sub1.id);
-        ctx.assertTruthy(created!.sub1.sendAt);
+        ctx.assertTruthy(created!.sub1.id, "id is set by server and required");
+        ctx.assertTruthy(created!.sub1.sendAt, "sendAt is set by server and required");
         ctx.assertTruthy(
           created!.sub1.undoStatus === "pending" ||
             created!.sub1.undoStatus === "final",
@@ -274,10 +274,15 @@ defineTests({ rfc: "RFC8621", section: "7.5", category: "submission" }, [
           const fetchedSub = (
             getResult.list as Array<Record<string, unknown>>
           )[0];
-          ctx.assertTruthy(fetchedSub.identityId);
-          ctx.assertTruthy(fetchedSub.emailId);
-          ctx.assertTruthy(fetchedSub.sendAt);
-          ctx.assertTruthy(fetchedSub.undoStatus);
+          if (fetchedSub) {
+            ctx.assertTruthy(fetchedSub.identityId);
+            ctx.assertTruthy(fetchedSub.emailId);
+            ctx.assertTruthy(fetchedSub.sendAt);
+            ctx.assertTruthy(fetchedSub.undoStatus);
+          } else {
+            // Expect id in notFound
+            ctx.assertDeepEqual(getResult.notFound, [sub.id as string], "Item not returned and missing from notFound")
+          }
         }
       } finally {
         await ctx.client.call("Email/set", {

@@ -134,7 +134,27 @@ defineTests({ rfc: "RFC8621", section: "4.4.1", category: "email" }, [
         filter: { hasAttachment: true },
       });
       const ids = result.ids as string[];
-      ctx.assertIncludes(ids, ctx.emailIds["html-attachment"]);
+      ctx.assertIncludes(ids, ctx.emailIds["html-attachment"],
+        "html-attachment (has PDF attachment) should be in hasAttachment=true results");
+
+      // Verify no attachment-less emails leaked in
+      const getResult = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids,
+        properties: ["subject", "from", "hasAttachment"],
+      });
+      const list = getResult.list as Array<{
+        id: string; subject: string;
+        from: Array<{ email: string }> | null;
+        hasAttachment: boolean;
+      }>;
+      for (const email of list) {
+        ctx.assert(
+          email.hasAttachment,
+          `hasAttachment=true query returned email without attachment: ` +
+            `"${email.subject}" (from: ${email.from?.[0]?.email ?? "unknown"}, id: ${email.id})`
+        );
+      }
     },
   },
   {
@@ -146,8 +166,27 @@ defineTests({ rfc: "RFC8621", section: "4.4.1", category: "email" }, [
         filter: { hasAttachment: false },
       });
       const ids = result.ids as string[];
-      ctx.assertIncludes(ids, ctx.emailIds["plain-simple"]);
-      ctx.assertNotIncludes(ids, ctx.emailIds["html-attachment"]);
+      ctx.assertIncludes(ids, ctx.emailIds["plain-simple"],
+        "plain-simple (no attachment) should be in hasAttachment=false results");
+
+      // Verify no attachment emails leaked in
+      const getResult = await ctx.client.call("Email/get", {
+        accountId: ctx.accountId,
+        ids,
+        properties: ["subject", "from", "hasAttachment"],
+      });
+      const list = getResult.list as Array<{
+        id: string; subject: string;
+        from: Array<{ email: string }> | null;
+        hasAttachment: boolean;
+      }>;
+      for (const email of list) {
+        ctx.assert(
+          !email.hasAttachment,
+          `hasAttachment=false query returned email WITH attachment: ` +
+            `"${email.subject}" (from: ${email.from?.[0]?.email ?? "unknown"}, id: ${email.id})`
+        );
+      }
     },
   },
   {

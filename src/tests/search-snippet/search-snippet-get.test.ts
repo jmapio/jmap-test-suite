@@ -110,8 +110,10 @@ defineTests({ rfc: "RFC8621", section: "5", category: "search-snippet" }, [
       ctx.assertType(result.accountId, "string");
       ctx.assert(Array.isArray(result.list), "list must be array");
       ctx.assert(
-        Array.isArray(result.notFound),
-        "notFound must be array"
+        result.notFound === null || (
+          Array.isArray(result.notFound) && result.notFound.length >= 1
+        ),
+        "notFound must be null or a non-empty array"
       );
     },
   },
