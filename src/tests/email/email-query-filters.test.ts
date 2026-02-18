@@ -499,6 +499,24 @@ defineTests({ rfc: "RFC8621", section: "4.4.1", category: "email" }, [
     },
   },
   {
+    id: "filter-null-accepted",
+    name: "Email/query accepts filter: null",
+    fn: async (ctx) => {
+      const result = await ctx.client.call("Email/query", {
+        accountId: ctx.accountId,
+        filter: null,
+        calculateTotal: true,
+      });
+      ctx.assert(Array.isArray(result.ids), "ids must be array");
+      const total = result.total as number;
+      ctx.assertGreaterOrEqual(
+        total,
+        Object.keys(ctx.emailIds).length,
+        "Null filter should return all emails"
+      );
+    },
+  },
+  {
     id: "filter-from-display-name",
     name: "Email/query filter from matches display name",
     fn: async (ctx) => {

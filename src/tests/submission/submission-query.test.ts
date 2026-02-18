@@ -39,4 +39,16 @@ defineTests({ rfc: "RFC8621", section: "7.3", category: "submission" }, [
       ctx.assert(Array.isArray(result.ids), "ids must be array");
     },
   },
+  {
+    id: "query-filter-null-accepted",
+    name: "EmailSubmission/query accepts filter: null",
+    fn: async (ctx) => {
+      const result = await ctx.client.call("EmailSubmission/query", {
+        accountId: ctx.accountId,
+        filter: null,
+      });
+      ctx.assertType(result.queryState, "string");
+      ctx.assert(Array.isArray(result.ids), "ids must be array");
+    },
+  },
 ]);

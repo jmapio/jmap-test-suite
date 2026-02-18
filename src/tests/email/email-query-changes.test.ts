@@ -119,6 +119,28 @@ defineTests({ rfc: "RFC8621", section: "4.5", category: "email" }, [
     },
   },
   {
+    id: "query-changes-filter-null-accepted",
+    name: "Email/queryChanges accepts filter: null",
+    fn: async (ctx) => {
+      const query = await ctx.client.call("Email/query", {
+        accountId: ctx.accountId,
+        filter: null,
+      });
+      const queryState = query.queryState as string;
+
+      const result = await ctx.client.call("Email/queryChanges", {
+        accountId: ctx.accountId,
+        filter: null,
+        sinceQueryState: queryState,
+      });
+
+      ctx.assertType(result.oldQueryState, "string");
+      ctx.assertType(result.newQueryState, "string");
+      ctx.assert(Array.isArray(result.removed), "removed must be array");
+      ctx.assert(Array.isArray(result.added), "added must be array");
+    },
+  },
+  {
     id: "query-changes-response-structure",
     name: "Email/queryChanges response has required properties",
     fn: async (ctx) => {

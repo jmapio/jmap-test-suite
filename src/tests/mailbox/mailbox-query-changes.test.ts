@@ -88,4 +88,26 @@ defineTests({ rfc: "RFC8621", section: "2.4", category: "mailbox" }, [
       ctx.assert(Array.isArray(result.added), "added must be array");
     },
   },
+  {
+    id: "query-changes-filter-null-accepted",
+    name: "Mailbox/queryChanges accepts filter: null",
+    fn: async (ctx) => {
+      const queryResult = await ctx.client.call("Mailbox/query", {
+        accountId: ctx.accountId,
+        filter: null,
+      });
+      const queryState = queryResult.queryState as string;
+
+      const result = await ctx.client.call("Mailbox/queryChanges", {
+        accountId: ctx.accountId,
+        filter: null,
+        sinceQueryState: queryState,
+      });
+
+      ctx.assertType(result.oldQueryState, "string");
+      ctx.assertType(result.newQueryState, "string");
+      ctx.assert(Array.isArray(result.removed), "removed must be array");
+      ctx.assert(Array.isArray(result.added), "added must be array");
+    },
+  },
 ]);

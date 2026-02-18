@@ -204,4 +204,17 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
       ctx.assertEqual(result.position, 1);
     },
   },
+  {
+    id: "query-filter-null-accepted",
+    name: "Mailbox/query accepts filter: null",
+    fn: async (ctx) => {
+      const result = await ctx.client.call("Mailbox/query", {
+        accountId: ctx.accountId,
+        filter: null,
+      });
+      ctx.assert(Array.isArray(result.ids), "ids must be array");
+      const ids = result.ids as string[];
+      ctx.assert(ids.length > 0, "Null filter should return mailboxes");
+    },
+  },
 ]);
