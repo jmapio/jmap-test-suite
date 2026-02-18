@@ -124,13 +124,13 @@ defineTests({ rfc: "RFC8621", section: "4.5", category: "email" }, [
     fn: async (ctx) => {
       const query = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
       });
       const queryState = query.queryState as string;
 
       const result = await ctx.client.call("Email/queryChanges", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sinceQueryState: queryState,
       });
 

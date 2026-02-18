@@ -388,7 +388,7 @@ defineTests({ rfc: "RFC8621", section: "4.4.1", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         calculateTotal: true,
       });
       const total = result.total as number;

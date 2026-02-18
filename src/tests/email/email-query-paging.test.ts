@@ -7,7 +7,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         position: 0,
         limit: 5,
@@ -25,7 +25,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const all = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
       });
       const allIds = all.ids as string[];
@@ -34,7 +34,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
 
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         position: 2,
         limit: 3,
@@ -50,7 +50,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const all = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         calculateTotal: true,
       });
@@ -61,7 +61,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
 
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         position: -3,
         calculateTotal: true,
@@ -77,7 +77,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         limit: 3,
         calculateTotal: true,
       });
@@ -95,7 +95,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const all = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
       });
       const allIds = all.ids as string[];
@@ -105,7 +105,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
       const anchorId = allIds[2]; // Use 3rd email as anchor
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         anchor: anchorId,
         limit: 3,
@@ -121,7 +121,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const all = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
       });
       const allIds = all.ids as string[];
@@ -131,7 +131,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
       const anchorId = allIds[3]; // 4th email
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         anchor: anchorId,
         anchorOffset: -1, // Start one before the anchor
@@ -147,7 +147,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         limit: 1,
         calculateTotal: true,
       });
@@ -193,7 +193,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         position: 99999,
       });
       const ids = result.ids as string[];
@@ -206,7 +206,7 @@ defineTests({ rfc: "RFC8621", section: "4.4", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         position: 0,
         limit: 3,
       });

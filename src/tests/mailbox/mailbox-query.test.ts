@@ -7,7 +7,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         calculateTotal: true,
       });
       const ids = result.ids as string[];
@@ -113,7 +113,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "name", isAscending: true }],
       });
       const ids = result.ids as string[];
@@ -142,7 +142,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "sortOrder", isAscending: true }],
       });
       const ids = result.ids as string[];
@@ -155,7 +155,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
       });
       ctx.assertType(result.accountId, "string");
       ctx.assertType(result.queryState, "string");
@@ -170,7 +170,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         limit: 2,
         calculateTotal: true,
       });
@@ -185,7 +185,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
       // Get all first
       const allResult = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "name", isAscending: true }],
       });
       const allIds = allResult.ids as string[];
@@ -195,7 +195,7 @@ defineTests({ rfc: "RFC8621", section: "2.3", category: "mailbox" }, [
       // Now query with position=1
       const result = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "name", isAscending: true }],
         position: 1,
       });

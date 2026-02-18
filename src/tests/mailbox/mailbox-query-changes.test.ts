@@ -7,14 +7,14 @@ defineTests({ rfc: "RFC8621", section: "2.4", category: "mailbox" }, [
     fn: async (ctx) => {
       const queryResult = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "name", isAscending: true }],
       });
       const queryState = queryResult.queryState as string;
 
       const result = await ctx.client.call("Mailbox/queryChanges", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "name", isAscending: true }],
         sinceQueryState: queryState,
       });
@@ -32,7 +32,7 @@ defineTests({ rfc: "RFC8621", section: "2.4", category: "mailbox" }, [
     fn: async (ctx) => {
       const queryResult = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "name", isAscending: true }],
       });
       const oldQueryState = queryResult.queryState as string;
@@ -49,7 +49,7 @@ defineTests({ rfc: "RFC8621", section: "2.4", category: "mailbox" }, [
       try {
         const changes = await ctx.client.call("Mailbox/queryChanges", {
           accountId: ctx.accountId,
-          filter: null,
+          filter: {},
           sort: [{ property: "name", isAscending: true }],
           sinceQueryState: oldQueryState,
         });
@@ -71,13 +71,13 @@ defineTests({ rfc: "RFC8621", section: "2.4", category: "mailbox" }, [
     fn: async (ctx) => {
       const queryResult = await ctx.client.call("Mailbox/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
       });
       const queryState = queryResult.queryState as string;
 
       const result = await ctx.client.call("Mailbox/queryChanges", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sinceQueryState: queryState,
       });
 

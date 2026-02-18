@@ -7,7 +7,7 @@ defineTests({ rfc: "RFC8621", section: "7.3", category: "submission" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("EmailSubmission/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
       });
       ctx.assertType(result.queryState, "string");
       ctx.assert(Array.isArray(result.ids), "ids must be array");
@@ -30,7 +30,7 @@ defineTests({ rfc: "RFC8621", section: "7.3", category: "submission" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("EmailSubmission/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
       });
       ctx.assertType(result.accountId, "string");
       ctx.assertType(result.queryState, "string");

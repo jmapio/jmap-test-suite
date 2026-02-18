@@ -39,7 +39,7 @@ defineTests({ rfc: "RFC8621", section: "4.4.3", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         collapseThreads: true,
       });
@@ -93,7 +93,7 @@ defineTests({ rfc: "RFC8621", section: "4.4.3", category: "email" }, [
       // Sort by receivedAt desc - should pick the newest email from each thread
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "receivedAt", isAscending: false }],
         collapseThreads: true,
       });
@@ -112,13 +112,13 @@ defineTests({ rfc: "RFC8621", section: "4.4.3", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         collapseThreads: true,
         calculateTotal: true,
       });
       const total = result.total as number;
       const ids = result.ids as string[];
-      ctx.assertEqual(ids.length, total);
+      ctx.assertEqual(total, ids.length);
     },
   },
 ]);

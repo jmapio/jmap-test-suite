@@ -134,7 +134,7 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [{ property: "to", isAscending: true }],
         limit: 10,
       });
@@ -283,7 +283,7 @@ defineTests({ rfc: "RFC8621", section: "4.4.2", category: "email" }, [
     fn: async (ctx) => {
       const result = await ctx.client.call("Email/query", {
         accountId: ctx.accountId,
-        filter: null,
+        filter: {},
         sort: [
           { property: "receivedAt", isAscending: false },
           { property: "subject", isAscending: true },
