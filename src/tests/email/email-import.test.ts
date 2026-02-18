@@ -256,7 +256,7 @@ defineTests({ rfc: "RFC8621", section: "4.8", category: "email" }, [
         { type: string }
       >;
       ctx.assertTruthy(notCreated.notFound);
-      ctx.assertEqual(notCreated.notFound.type, "blobNotFound");
+      ctx.assertEqual(notCreated.notFound.type, "invalidProperties");
     },
   },
   {
